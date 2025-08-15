@@ -131,6 +131,38 @@ async def register_user(email: str, password: str, name: Optional[str] = None) -
         return None
 
 
+async def get_current_user_from_token(token: str) -> Dict[str, Any]:
+    """Autentica usuário via token JWT para WebSocket."""
+    payload = verify_token(token)
+    
+    user_id = payload.get("sub")
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials"
+        )
+    
+    # Busca dados do usuário no Supabase
+    try:
+        user_response = supabase.auth.get_user(token)
+        if user_response.user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+        
+        return {
+            "id": user_response.user.id,
+            "email": user_response.user.email,
+            "user_metadata": user_response.user.user_metadata
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate user"
+        )
+
+
 def get_supabase_client() -> Client:
     """Dependency para obter cliente Supabase."""
     return supabase

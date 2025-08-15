@@ -82,14 +82,15 @@ app.add_middleware(
 
 # Registra rotas
 from app.api.v1.health import router as health_router
-from app.api.v1.auth import router as auth_router
 from app.api.v1.teams import router as teams_router
-from app.api.v1.agents import router as agents_router
+from app.api.v1.executions import router as team_executions_router, executions_router
+from app.api.v1.websocket import router as websocket_router
 
 app.include_router(health_router, tags=["Health"])
-app.include_router(auth_router, prefix="/api/v1", tags=["Authentication"])
 app.include_router(teams_router, prefix="/api/v1", tags=["Teams"])
-app.include_router(agents_router, prefix="/api/v1", tags=["Agents"])
+app.include_router(team_executions_router, prefix="/api/v1", tags=["Executions"])
+app.include_router(executions_router, prefix="/api/v1", tags=["Executions"])
+app.include_router(websocket_router, prefix="/api/v1", tags=["WebSocket"])
 
 
 @app.get("/")

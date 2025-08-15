@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -64,17 +63,20 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				renum: {
-					bg: '#FFFFFF',
-					fg: '#0F172A',
-					primary: '#5B5FEF',
-					primaryDark: '#4A4ED1',
-					ring: '#9AA3FF',
+					bg: 'hsl(var(--renum-bg))',
+					fg: 'hsl(var(--renum-fg))',
+					primary: 'hsl(var(--renum-primary))',
+					primaryDark: 'hsl(var(--renum-primary-dark))',
+					ring: 'hsl(var(--renum-ring))',
 					mute: '#F3F4F6',
 					card: '#FAFAFA',
+					leftBg: '#FFFBF5',
+					leftBgDark: '#111827',
 				},
 			},
 			fontFamily: {
 				sans: [
+					'Inter',
 					'ui-sans-serif',
 					'-apple-system',
 					'system-ui',

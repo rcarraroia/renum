@@ -92,6 +92,13 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* RENUM dark mode variables */
+    --renum-bg: 222.2 84% 4.9%;
+    --renum-fg: 210 40% 98%;
+    --renum-primary: 275 100% 80%;
+    --renum-primary-dark: 275 100% 75%;
+    --renum-ring: 275 67% 80%;
   }
 }
 
@@ -101,7 +108,7 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
     height: 100%;
     background: hsl(var(--renum-bg));
     color: hsl(var(--renum-fg));
@@ -114,11 +121,11 @@ All colors MUST be HSL.
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-medium shadow-subtle transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 active:translate-y-0;
+    @apply inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-medium shadow-subtle transition-all duration-200 hover:-translate-y-0.5 focus:outline-none focus:ring-2 active:translate-y-0;
   }
   
   .btn-primary {
-    @apply bg-renum-primary text-white hover:bg-renum-primaryDark;
+    @apply bg-renum-primary text-white hover:bg-renum-primaryDark focus:ring-renum-ring;
     background: hsl(var(--renum-primary));
     color: white;
   }
@@ -127,19 +134,18 @@ All colors MUST be HSL.
     background: hsl(var(--renum-primary-dark));
   }
   
-  .btn-primary:focus {
-    @apply ring-2;
-    ring-color: hsl(var(--renum-ring));
-  }
-  
   .btn-secondary {
-    @apply bg-renum-card text-renum-fg hover:bg-renum-mute;
+    @apply bg-white text-renum-fg hover:bg-gray-50 border border-gray-200 focus:ring-renum-ring;
     background: hsl(var(--renum-bg));
     color: hsl(var(--renum-fg));
     border: 1px solid hsl(214.3 31.8% 91.4%);
   }
   
   .btn-secondary:hover {
-    background: #F3F4F6;
+    background: #F9FAFB;
+  }
+
+  .dark .btn-secondary {
+    @apply bg-gray-800 text-white hover:bg-gray-700 border-gray-700;
   }
 }

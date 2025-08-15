@@ -13,7 +13,7 @@ export default function Typewriter({ texts, speed = 28, pause = 1200, loop = tru
   const indexRef = useRef(0)
   const [output, setOutput] = useState('')
   const [phase, setPhase] = useState<'typing'|'pausing'|'deleting'>('typing')
-  const current = useMemo(() => texts[indexRef.current % texts.length] || '', [texts])
+  const current = useMemo(() => texts[indexRef.current % texts.length] || '', [texts, indexRef.current])
 
   useEffect(() => {
     if (phase === 'typing') {
@@ -41,8 +41,7 @@ export default function Typewriter({ texts, speed = 28, pause = 1200, loop = tru
   return (
     <span aria-live="polite" aria-atomic="true">
       {output}
-      <span className="ml-0.5 inline-block h-[1.1em] w-[2px] translate-y-0.5 animate-caret" 
-            style={{ backgroundColor: 'hsl(var(--renum-fg))' }} />
+      <span className="ml-0.5 inline-block h-[1.1em] w-[2px] translate-y-0.5 animate-caret bg-renum-primary dark:bg-purple-300" />
     </span>
   )
 }

@@ -39,7 +39,13 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
   });
 
   const onSubmit = async (data: SignupFormData) => {
-    const { error } = await signup(data);
+    // Cast the data to ensure type compatibility
+    const { error } = await signup({
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      confirmPassword: data.confirmPassword,
+    });
     
     if (error) {
       toast({

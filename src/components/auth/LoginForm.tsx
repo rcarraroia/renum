@@ -34,7 +34,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    const { error } = await login(data);
+    // Cast the data to ensure type compatibility
+    const { error } = await login({
+      email: data.email,
+      password: data.password,
+    });
     
     if (error) {
       toast({

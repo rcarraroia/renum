@@ -9,16 +9,19 @@ type DbTeamUpdate = Database['public']['Tables']['teams']['Update'];
 
 // Helper function to convert database team to frontend team
 const convertDbTeamToTeam = (dbTeam: DbTeam): Team => {
-  const agents = (dbTeam.agents as TeamAgent[]) || [];
+  // Safely cast agents with proper type checking
+  const agents: TeamAgent[] = Array.isArray(dbTeam.agents) 
+    ? (dbTeam.agents as unknown as TeamAgent[])
+    : [];
   
   return {
     id: dbTeam.id,
-    name: dbTeam.name,
+    name: dbTeam.name || '', // Handle potential null
     description: dbTeam.description || undefined,
-    workflow_type: dbTeam.workflow_type as any,
+    workflow_type: (dbTeam.workflow_type as any) || 'sequential',
     user_id: dbTeam.user_id,
     agents,
-    status: dbTeam.status as any || 'active',
+    status: (dbTeam.status as any) || 'active',
     agents_count: agents.length,
     created_at: dbTeam.created_at || new Date().toISOString(),
     updated_at: dbTeam.updated_at || new Date().toISOString(),
@@ -27,13 +30,25 @@ const convertDbTeamToTeam = (dbTeam: DbTeam): Team => {
 
 // Helper function to convert frontend team to database team
 const convertTeamToDbTeam = (team: Partial<Team>): Partial<DbTeamInsert | DbTeamUpdate> => {
-  return {
-    name: team.name,
-    description: team.description,
-    workflow_type: team.workflow_type,
-    agents: team.agents as any,
-    status: team.status,
-  };
+  const dbTeam: Partial<DbTeamInsert | DbTeamUpdate> = {};
+  
+  if (team.name !== undefined) {
+    dbTeam.name = team.name;
+  }
+  if (team.description !== undefined) {
+    dbTeam.description = team.description;
+  }
+  if (team.workflow_type !== undefined) {
+    dbTeam.workflow_type = team.workflow_type;
+  }
+  if (team.agents !== undefined) {
+    dbTeam.agents = team.agents as any;
+  }
+  if (team.status !== undefined) {
+    dbTeam.status = team.status;
+  }
+  
+  return dbTeam;
 };
 
 export const teamsApi = {
@@ -95,8 +110,9 @@ export const teamsApi = {
     }
 
     const dbTeamData: DbTeamInsert = {
-      ...convertTeamToDbTeam(teamData),
+      name: teamData.name || '',
       user_id: user.id,
+      ...convertTeamToDbTeam(teamData),
     };
 
     const { data, error } = await supabase
@@ -120,7 +136,7 @@ export const teamsApi = {
       throw new Error('Usuário não autenticado');
     }
 
-    const dbTeamData: DbTeamUpdate = convertTeamToDbTeam(teamData);
+    const dbTeamData = convertTeamToDbTeam(teamData);
 
     const { data, error } = await supabase
       .from('teams')

@@ -1,99 +1,138 @@
 
-import Typewriter from '../components/Typewriter'
-import ThemeToggle from '../components/ThemeToggle'
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Typewriter } from 'react-simple-typewriter';
+import { Users, Activity, Zap } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
-const Index = () => {
-  return (
-    <div className="flex h-screen flex-col md:grid md:grid-cols-2 lg:grid-cols-[60%_40%]">
-      {/* Coluna Esquerda - Logo + Texto Principal com Typewriter */}
-      <div className="relative hidden flex-1 flex-col justify-center bg-blue-50 px-5 pt-8 dark:bg-gray-900 md:flex md:px-6 md:py-[22px] lg:px-8">
-        <div className="flex flex-col">
-          <div className="mb-8 flex items-center gap-3">
-            <div className="h-9 w-9 rounded-2xl flex items-center justify-center"
-                 style={{ backgroundColor: 'hsl(var(--renum-primary) / 0.1)' }}>
-              <span className="font-semibold text-renum-primary">R</span>
+export default function Index() {
+  const { user, loading, initialized } = useAuth();
+
+  // Loading state while auth initializes
+  if (!initialized || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <div className="animate-pulse space-y-4">
+              <div className="h-16 bg-muted rounded-lg mx-auto max-w-2xl"></div>
+              <div className="h-8 bg-muted rounded mx-auto max-w-lg"></div>
             </div>
-            <span className="font-semibold text-renum-fg dark:text-white">RENUM</span>
-          </div>
-          
-          <div className="flex flex-col text-[32px] leading-[1.2] md:text-[40px]">
-            <h1 className="font-semibold tracking-tight text-renum-primary dark:text-purple-300">
-              <Typewriter 
-                texts={[
-                  'Orquestre suas equipes de agentes de IA com o Renum',
-                  'Crie workflows inteligentes e automatizados',
-                  'Integre agentes do Suna com orquestração avançada',
-                  'Resultados em tempo real, com simplicidade e potência'
-                ]} 
-                speed={30}
-                pause={2000}
-              />
-            </h1>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Coluna Direita - Botões e Links */}
-      <div className="relative flex grow flex-col items-center justify-between bg-white px-5 py-8 dark:bg-black dark:text-white sm:rounded-t-[30px] md:rounded-none md:px-6">
-        {/* Header Mobile/Desktop */}
-        <header className="w-full flex items-center justify-between md:hidden">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-2xl flex items-center justify-center"
-                 style={{ backgroundColor: 'hsl(var(--renum-primary) / 0.1)' }}>
-              <span className="font-semibold text-renum-primary">R</span>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center space-y-8">
+          {/* Hero Section */}
+          <div className="space-y-6">
+            <div className="inline-block">
+              <div className="bg-renum-primary/10 text-renum-primary px-4 py-2 rounded-full text-sm font-medium border border-renum-primary/20">
+                ✨ Powered by AI Agents
+              </div>
             </div>
-            <span className="font-semibold">RENUM</span>
-          </div>
-          <ThemeToggle />
-        </header>
-
-        {/* Theme Toggle para Desktop */}
-        <div className="hidden md:flex w-full justify-end">
-          <ThemeToggle />
-        </div>
-
-        {/* Conteúdo Mobile - Título + Typewriter (visível apenas em mobile) */}
-        <div className="flex flex-1 w-full items-center justify-center md:hidden">
-          <div className="text-center">
-            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-renum-primary dark:text-purple-300 mb-4">
+            
+            <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-foreground via-renum-primary to-foreground bg-clip-text text-transparent leading-tight">
               <Typewriter 
-                texts={[
-                  'Orquestre suas equipes de agentes de IA',
-                  'Workflows inteligentes e automatizados',
-                  'Integração avançada com agentes do Suna'
-                ]} 
-                speed={35}
-                pause={1800}
+                words={[
+                  "Automatize com IA",
+                  "Crie Equipes Inteligentes", 
+                  "Otimize Processos",
+                  "Renum - AI Teams"
+                ]}
+                loop={true}
+                cursor={true}
+                cursorStyle="|"
+                typeSpeed={100}
+                deleteSpeed={50}
+                delaySpeed={2000}
               />
             </h1>
+            
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              {user ? (
+                <>Bem-vindo de volta, <span className="text-renum-primary font-medium">{user.email}</span>! 
+                Gerencie suas equipes de IA e monitore execuções em tempo real.</>
+              ) : (
+                <>Crie equipes de agentes de IA que trabalham juntos para automatizar 
+                seus processos e aumentar sua produtividade.</>
+              )}
+            </p>
+          </div>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            {user ? (
+              <>
+                <Link 
+                  to="/dashboard" 
+                  className="btn-primary text-lg px-8 py-4 rounded-xl hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                >
+                  Acessar Dashboard
+                </Link>
+                <Link 
+                  to="/dashboard/teams" 
+                  className="btn-secondary text-lg px-8 py-4 rounded-xl hover:scale-105 transition-all duration-200"
+                >
+                  Gerenciar Equipes
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link 
+                  to="/auth" 
+                  className="btn-primary text-lg px-8 py-4 rounded-xl hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                >
+                  Começar Agora
+                </Link>
+                <a 
+                  href="#features" 
+                  className="btn-secondary text-lg px-8 py-4 rounded-xl hover:scale-105 transition-all duration-200"
+                >
+                  Saiba Mais
+                </a>
+              </>
+            )}
+          </div>
+
+          {/* Features Preview */}
+          <div className="mt-20 grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="p-6 rounded-2xl bg-card border border-border hover:shadow-lg transition-all duration-300 hover:scale-105">
+              <div className="w-12 h-12 bg-renum-primary/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                <Users className="h-6 w-6 text-renum-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Equipes Inteligentes</h3>
+              <p className="text-muted-foreground">
+                Configure equipes de agentes IA com diferentes papéis e workflows
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-card border border-border hover:shadow-lg transition-all duration-300 hover:scale-105">
+              <div className="w-12 h-12 bg-renum-primary/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                <Activity className="h-6 w-6 text-renum-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Monitoramento</h3>
+              <p className="text-muted-foreground">
+                Acompanhe execuções em tempo real com logs detalhados
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-card border border-border hover:shadow-lg transition-all duration-300 hover:scale-105">
+              <div className="w-12 h-12 bg-renum-primary/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                <Zap className="h-6 w-6 text-renum-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Automação</h3>
+              <p className="text-muted-foreground">
+                Automatize processos complexos com workflows inteligentes
+              </p>
+            </div>
           </div>
         </div>
-
-        {/* Botões de Ação */}
-        <div className="flex flex-col w-full max-w-sm gap-3">
-          <a className="btn btn-primary w-full text-center" href="/signup">
-            Cadastre-se gratuitamente
-          </a>
-          <a className="btn btn-secondary w-full text-center" href="/login">
-            Entrar
-          </a>
-        </div>
-
-        {/* Footer com Links Legais */}
-        <footer className="w-full text-center text-sm text-gray-500 dark:text-gray-400">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href="/termos" className="hover:underline hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-              Termos de Uso
-            </a>
-            <span className="hidden sm:inline">•</span>
-            <a href="/privacidade" className="hover:underline hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-              Política de Privacidade
-            </a>
-          </div>
-        </footer>
       </div>
     </div>
-  )
+  );
 }
-
-export default Index

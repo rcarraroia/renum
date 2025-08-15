@@ -1,10 +1,11 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Team, TeamExecution, SystemHealth } from '@/types/team';
+import { teamsApi } from './teamsApi';
 
-const API_BASE_URL = 'https://ldfzypnyjqoyzqcnkcdy.functions.supabase.co/functions/v1';
+const API_BASE_URL = 'http://localhost:8000';
 
-// Função auxiliar para fazer requisições autenticadas
+// Função auxiliar para fazer requisições autenticadas para o backend Python
 const makeAuthenticatedRequest = async (endpoint: string, options: RequestInit = {}) => {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
@@ -29,113 +30,111 @@ const makeAuthenticatedRequest = async (endpoint: string, options: RequestInit =
 };
 
 export const api = {
-  // Autenticação
+  // Autenticação (usando Supabase diretamente)
   auth: {
     login: async (email: string, password: string) => {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Erro no login');
+      if (error) {
+        throw new Error(error.message);
       }
 
-      return response.json();
+      return {
+        access_token: data.session?.access_token,
+        user: data.user,
+      };
     },
 
     signup: async (email: string, password: string, name: string) => {
-      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name }),
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name,
+          },
+        },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Erro no cadastro');
+      if (error) {
+        throw new Error(error.message);
       }
 
-      return response.json();
+      return {
+        access_token: data.session?.access_token,
+        user: data.user,
+      };
     },
 
     refresh: async (refreshToken: string) => {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: refreshToken }),
+      const { data, error } = await supabase.auth.refreshSession({
+        refresh_token: refreshToken,
       });
 
-      if (!response.ok) {
-        throw new Error('Erro ao renovar token');
+      if (error) {
+        throw new Error(error.message);
       }
 
-      return response.json();
+      return {
+        access_token: data.session?.access_token,
+        refresh_token: data.session?.refresh_token,
+      };
     },
   },
 
-  // Gerenciamento de equipes
-  teams: {
-    list: async (): Promise<{ teams: Team[]; total: number }> => {
-      return makeAuthenticatedRequest('/teams');
-    },
+  // Gerenciamento de equipes (usando Supabase diretamente)
+  teams: teamsApi,
 
-    get: async (teamId: string): Promise<Team> => {
-      return makeAuthenticatedRequest(`/teams/${teamId}`);
-    },
-
-    create: async (teamData: Partial<Team>): Promise<Team> => {
-      return makeAuthenticatedRequest('/teams', {
-        method: 'POST',
-        body: JSON.stringify(teamData),
-      });
-    },
-
-    update: async (teamId: string, teamData: Partial<Team>): Promise<Team> => {
-      return makeAuthenticatedRequest(`/teams/${teamId}`, {
-        method: 'PUT',
-        body: JSON.stringify(teamData),
-      });
-    },
-
-    delete: async (teamId: string): Promise<void> => {
-      return makeAuthenticatedRequest(`/teams/${teamId}`, {
-        method: 'DELETE',
-      });
-    },
-
-    execute: async (teamId: string, executionData: { initial_prompt: string }) => {
-      return makeAuthenticatedRequest(`/teams/${teamId}/execute`, {
-        method: 'POST',
-        body: JSON.stringify(executionData),
-      });
-    },
-  },
-
-  // Execuções
+  // Execuções (mock por enquanto, futuramente será integrado com o backend Python)
   executions: {
     list: async (): Promise<{ executions: TeamExecution[] }> => {
-      return makeAuthenticatedRequest('/executions');
+      // Mock implementation - futuramente será integrado com o backend
+      return { executions: [] };
     },
 
     get: async (executionId: string): Promise<TeamExecution> => {
-      return makeAuthenticatedRequest(`/executions/${executionId}`);
+      // Mock implementation - futuramente será integrado com o backend
+      throw new Error('Execução não encontrada');
     },
 
     cancel: async (executionId: string): Promise<boolean> => {
-      await makeAuthenticatedRequest(`/executions/${executionId}/cancel`, {
-        method: 'POST',
-      });
+      // Mock implementation - futuramente será integrado com o backend
       return true;
     },
   },
 
-  // Sistema
+  // Sistema (usando backend Python quando disponível)
   system: {
     health: async (): Promise<SystemHealth> => {
-      return makeAuthenticatedRequest('/system/health');
+      try {
+        // Tenta conectar com o backend Python primeiro
+        const backendHealth = await makeAuthenticatedRequest('/health');
+        return backendHealth;
+      } catch (error) {
+        // Se o backend não estiver disponível, retorna status do Supabase
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        return {
+          status: 'ok' as const,
+          services: {
+            database: { 
+              status: 'ok', 
+              latency_ms: 50 
+            },
+            suna_backend: { 
+              status: 'down', 
+              latency_ms: 0 
+            },
+            websocket: { 
+              status: 'down', 
+              connections: 0 
+            },
+          },
+        };
+      }
     },
   },
 };

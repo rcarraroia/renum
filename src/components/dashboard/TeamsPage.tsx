@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Play, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { mockTeamApi } from '@/services/mockApi';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Plus, Edit, Trash2, Play, Users, Settings } from 'lucide-react';
+import { TeamForm } from './TeamForm';
+import { TeamDetails } from './TeamDetails';
 import { Team } from '@/types/team';
-import { TeamForm } from '@/components/dashboard/TeamForm';
-import { TeamDetails } from '@/components/dashboard/TeamDetails';
+import { mockApi } from '@/services/mockApi';
 import { useToast } from '@/hooks/use-toast';
 
 export function TeamsPage() {
@@ -21,20 +22,20 @@ export function TeamsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchTeams();
+    loadTeams();
   }, []);
 
-  const fetchTeams = async () => {
+  const loadTeams = async () => {
     try {
       setLoading(true);
-      const response = await mockTeamApi.getTeams();
-      setTeams(response.teams);
+      const data = await mockApi.getTeams();
+      setTeams(data);
     } catch (error) {
-      console.error('Error fetching teams:', error);
+      console.error('Error loading teams:', error);
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar as equipes",
-        variant: "destructive",
+        title: 'Erro',
+        description: 'Falha ao carregar equipes',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -43,105 +44,130 @@ export function TeamsPage() {
 
   const handleCreateTeam = async (teamData: Partial<Team>) => {
     try {
-      const newTeam = await mockTeamApi.createTeam(teamData);
-      setTeams(prev => [...prev, newTeam]);
+      const newTeam = await mockApi.createTeam(teamData);
+      setTeams(prev => [newTeam, ...prev]);
       setIsCreateDialogOpen(false);
       toast({
-        title: "Sucesso",
-        description: "Equipe criada com sucesso!",
+        title: 'Sucesso',
+        description: 'Equipe criada com sucesso',
       });
     } catch (error) {
       console.error('Error creating team:', error);
       toast({
-        title: "Erro",
-        description: "Não foi possível criar a equipe",
-        variant: "destructive",
+        title: 'Erro',
+        description: 'Falha ao criar equipe',
+        variant: 'destructive',
       });
     }
   };
 
   const handleUpdateTeam = async (teamData: Partial<Team>) => {
     if (!selectedTeam) return;
-
+    
     try {
-      const updatedTeam = await mockTeamApi.updateTeam(selectedTeam.id, teamData);
-      if (updatedTeam) {
-        setTeams(prev => prev.map(team => 
-          team.id === selectedTeam.id ? updatedTeam : team
-        ));
-        setIsEditDialogOpen(false);
-        setSelectedTeam(null);
-        toast({
-          title: "Sucesso",
-          description: "Equipe atualizada com sucesso!",
-        });
-      }
+      const updatedTeam = await mockApi.updateTeam(selectedTeam.id, teamData);
+      setTeams(prev => prev.map(team => 
+        team.id === selectedTeam.id ? updatedTeam : team
+      ));
+      setIsEditDialogOpen(false);
+      setSelectedTeam(null);
+      toast({
+        title: 'Sucesso',
+        description: 'Equipe atualizada com sucesso',
+      });
     } catch (error) {
       console.error('Error updating team:', error);
       toast({
-        title: "Erro",
-        description: "Não foi possível atualizar a equipe",
-        variant: "destructive",
+        title: 'Erro',
+        description: 'Falha ao atualizar equipe',
+        variant: 'destructive',
       });
     }
   };
 
   const handleDeleteTeam = async (teamId: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta equipe?')) return;
-
     try {
-      const success = await mockTeamApi.deleteTeam(teamId);
-      if (success) {
-        setTeams(prev => prev.filter(team => team.id !== teamId));
-        toast({
-          title: "Sucesso",
-          description: "Equipe excluída com sucesso!",
-        });
-      }
+      await mockApi.deleteTeam(teamId);
+      setTeams(prev => prev.filter(team => team.id !== teamId));
+      toast({
+        title: 'Sucesso',
+        description: 'Equipe excluída com sucesso',
+      });
     } catch (error) {
       console.error('Error deleting team:', error);
       toast({
-        title: "Erro",
-        description: "Não foi possível excluir a equipe",
-        variant: "destructive",
+        title: 'Erro',
+        description: 'Falha ao excluir equipe',
+        variant: 'destructive',
       });
     }
   };
 
   const handleExecuteTeam = async (teamId: string) => {
     try {
-      const execution = await mockTeamApi.executeTeam(teamId, {
-        prompt: "Iniciar execução manual"
+      const execution = await mockApi.executeTeam(teamId, { 
+        initial_prompt: 'Executar equipe via dashboard' 
       });
       toast({
-        title: "Execução Iniciada",
-        description: `Execução ${execution.execution_id} foi iniciada com sucesso!`,
+        title: 'Execução Iniciada',
+        description: `Execução ${execution.execution_id} iniciada com sucesso`,
       });
     } catch (error) {
       console.error('Error executing team:', error);
       toast({
-        title: "Erro",
-        description: "Não foi possível iniciar a execução",
-        variant: "destructive",
+        title: 'Erro',
+        description: 'Falha ao executar equipe',
+        variant: 'destructive',
       });
+    }
+  };
+
+  const getWorkflowTypeLabel = (type: string) => {
+    switch (type) {
+      case 'sequential': return 'Sequencial';
+      case 'parallel': return 'Paralelo';
+      case 'conditional': return 'Condicional';
+      case 'pipeline': return 'Pipeline';
+      default: return type;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'inactive': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+      case 'archived': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'active': return 'Ativa';
+      case 'inactive': return 'Inativa';
+      case 'archived': return 'Arquivada';
+      default: return status;
     }
   };
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Equipes</h1>
-          <Button disabled>
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Equipe
-          </Button>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
+          {[...Array(6)].map((_, i) => (
             <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-24 bg-muted rounded"></div>
+              <CardHeader>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+                <div className="h-3 bg-muted rounded w-1/2"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="h-3 bg-muted rounded"></div>
+                  <div className="h-3 bg-muted rounded w-2/3"></div>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -152,143 +178,164 @@ export function TeamsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Equipes</h1>
           <p className="text-muted-foreground">
-            Gerencie suas equipes de agentes
+            Gerencie suas equipes de agentes IA
           </p>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4 mr-2" />
               Nova Equipe
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Criar Nova Equipe</DialogTitle>
-              <DialogDescription>
-                Configure uma nova equipe de agentes
-              </DialogDescription>
             </DialogHeader>
-            <TeamForm onSubmit={handleCreateTeam} onCancel={() => setIsCreateDialogOpen(false)} />
+            <TeamForm
+              onSubmit={handleCreateTeam}
+              onCancel={() => setIsCreateDialogOpen(false)}
+            />
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {teams.map((team) => (
-          <Card key={team.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{team.name}</CardTitle>
-                <Badge variant={team.status === 'active' ? 'default' : 'secondary'}>
-                  {team.status}
-                </Badge>
-              </div>
-              <CardDescription>
-                {team.description || 'Sem descrição'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Agentes:</span>
-                  <span className="font-medium">{team.agents_count}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Workflow:</span>
-                  <span className="font-medium capitalize">{team.workflow_type}</span>
-                </div>
-                
-                <div className="flex space-x-2 pt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedTeam(team);
-                      setIsDetailsDialogOpen(true);
-                    }}
-                  >
-                    <Eye className="h-3 w-3 mr-1" />
-                    Ver
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedTeam(team);
-                      setIsEditDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    Editar
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleExecuteTeam(team.id)}
-                    className="bg-renum-primary hover:bg-renum-primary/90"
-                  >
-                    <Play className="h-3 w-3 mr-1" />
-                    Executar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDeleteTeam(team.id)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {teams.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Users className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nenhuma equipe encontrada</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Crie sua primeira equipe de agentes para começar
-            </p>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Criar Primeira Equipe
-            </Button>
-          </CardContent>
+      {teams.length === 0 ? (
+        <Card className="p-8 text-center">
+          <div className="mx-auto w-12 h-12 bg-muted rounded-lg flex items-center justify-center mb-4">
+            <Users className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">Nenhuma equipe encontrada</h3>
+          <p className="text-muted-foreground mb-4">
+            Crie sua primeira equipe de agentes IA para começar
+          </p>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Criar Primeira Equipe
+          </Button>
         </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {teams.map((team) => (
+            <Card key={team.id} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg">{team.name}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {getWorkflowTypeLabel(team.workflow_type)}
+                      </Badge>
+                      <Badge className={`text-xs ${getStatusColor(team.status)}`}>
+                        {getStatusLabel(team.status)}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {team.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {team.description}
+                    </p>
+                  )}
+                  
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Users className="h-4 w-4 mr-1" />
+                    {team.agents_count} agente{team.agents_count !== 1 ? 's' : ''}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTeam(team);
+                          setIsDetailsDialogOpen(true);
+                        }}
+                      >
+                        <Settings className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTeam(team);
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir Equipe</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir a equipe "{team.name}"? 
+                              Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteTeam(team.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                    <Button 
+                      size="sm"
+                      onClick={() => handleExecuteTeam(team.id)}
+                      disabled={team.status !== 'active'}
+                    >
+                      <Play className="h-3 w-3 mr-1" />
+                      Executar
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
 
-      {/* Dialog para editar equipe */}
+      {/* Edit Team Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Equipe</DialogTitle>
-            <DialogDescription>
-              Atualize as configurações da equipe
-            </DialogDescription>
           </DialogHeader>
           {selectedTeam && (
-            <TeamForm 
+            <TeamForm
               initialData={selectedTeam}
-              onSubmit={handleUpdateTeam} 
+              onSubmit={handleUpdateTeam}
               onCancel={() => {
                 setIsEditDialogOpen(false);
                 setSelectedTeam(null);
-              }} 
+              }}
             />
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para detalhes da equipe */}
+      {/* Team Details Dialog */}
       <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalhes da Equipe</DialogTitle>
           </DialogHeader>

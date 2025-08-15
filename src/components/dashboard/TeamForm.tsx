@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -65,7 +65,7 @@ export function TeamForm({ initialData, onSubmit, onCancel }: TeamFormProps) {
     }
   });
 
-  const { fields, append, remove } = form.useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'agents'
   });
@@ -78,7 +78,11 @@ export function TeamForm({ initialData, onSubmit, onCancel }: TeamFormProps) {
         agent_id: agent.agent_id,
         role: agent.role,
         order: agent.order,
-        config: agent.config
+        config: {
+          input_source: agent.config.input_source,
+          conditions: agent.config.conditions || [],
+          timeout_minutes: agent.config.timeout_minutes
+        }
       }))
     };
     

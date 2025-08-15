@@ -49,8 +49,10 @@ const navigationItems = [
 
 export function DashboardSidebar() {
   const location = useLocation();
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
   const { logout, user } = useAuth();
+
+  const isCollapsed = state === 'collapsed';
 
   const isActive = (path: string) => {
     if (path === '/dashboard') {
@@ -60,9 +62,9 @@ export function DashboardSidebar() {
   };
 
   return (
-    <Sidebar className={collapsed ? "w-14" : "w-60"} collapsible>
+    <Sidebar className={isCollapsed ? "w-14" : "w-60"} collapsible="icon">
       <SidebarHeader className="p-4">
-        {!collapsed && (
+        {!isCollapsed && (
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-renum-primary rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">R</span>
@@ -82,7 +84,7 @@ export function DashboardSidebar() {
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
                     <Link to={item.url} className="flex items-center space-x-3">
                       <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!isCollapsed && <span>{item.title}</span>}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -93,7 +95,7 @@ export function DashboardSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4">
-        {!collapsed && user && (
+        {!isCollapsed && user && (
           <div className="space-y-2">
             <div className="text-sm text-muted-foreground">
               Logado como: {user.email}

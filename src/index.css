@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -39,20 +40,20 @@ All colors MUST be HSL.
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* RENUM specific variables */
+    --renum-bg: 0 0% 100%;
+    --renum-fg: 215 28% 17%;
+    --renum-primary: 242 84% 62%;
+    --renum-primary-dark: 242 84% 55%;
+    --renum-ring: 242 67% 80%;
   }
 
   .dark {
@@ -101,5 +102,44 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    height: 100%;
+    background: hsl(var(--renum-bg));
+    color: hsl(var(--renum-fg));
+  }
+
+  html {
+    height: 100%;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-medium shadow-subtle transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 active:translate-y-0;
+  }
+  
+  .btn-primary {
+    @apply bg-renum-primary text-white hover:bg-renum-primaryDark;
+    background: hsl(var(--renum-primary));
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background: hsl(var(--renum-primary-dark));
+  }
+  
+  .btn-primary:focus {
+    @apply ring-2;
+    ring-color: hsl(var(--renum-ring));
+  }
+  
+  .btn-secondary {
+    @apply bg-renum-card text-renum-fg hover:bg-renum-mute;
+    background: hsl(var(--renum-bg));
+    color: hsl(var(--renum-fg));
+    border: 1px solid hsl(214.3 31.8% 91.4%);
+  }
+  
+  .btn-secondary:hover {
+    background: #F3F4F6;
   }
 }

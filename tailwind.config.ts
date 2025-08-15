@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,37 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				renum: {
+					bg: '#FFFFFF',
+					fg: '#0F172A',
+					primary: '#5B5FEF',
+					primaryDark: '#4A4ED1',
+					ring: '#9AA3FF',
+					mute: '#F3F4F6',
+					card: '#FAFAFA',
+				},
+			},
+			fontFamily: {
+				sans: [
+					'ui-sans-serif',
+					'-apple-system',
+					'system-ui',
+					'Segoe UI',
+					'Roboto',
+					'Ubuntu',
+					'Cantarell',
+					'Noto Sans',
+					'Helvetica Neue',
+					'Arial',
+					'Apple Color Emoji',
+					'Segoe UI Emoji',
+					'Segoe UI Symbol',
+					'sans-serif',
+				],
+			},
+			boxShadow: {
+				subtle: '0 2px 10px rgba(15, 23, 42, 0.06)',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,11 +115,16 @@ export default {
 					to: {
 						height: '0'
 					}
-				}
+				},
+				caret: {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0' },
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				caret: 'caret 1s step-end infinite',
 			}
 		}
 	},

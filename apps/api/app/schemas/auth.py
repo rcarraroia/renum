@@ -33,6 +33,13 @@ class RefreshTokenResponse(BaseModel):
     expires_in: int
 
 
+class RegisterRequest(BaseModel):
+    """Schema para requisição de registro."""
+    email: EmailStr
+    password: str
+    name: Optional[str] = None
+
+
 class ErrorResponse(BaseModel):
     """Schema para respostas de erro."""
     detail: str

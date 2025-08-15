@@ -16,6 +16,7 @@ Requires-Dist: websockets>=13.1
 Requires-Dist: python-dotenv>=1.0.0
 Requires-Dist: python-multipart>=0.0.6
 Requires-Dist: pyjwt>=2.10.0
+Requires-Dist: python-jose[cryptography]>=3.3.0
 Requires-Dist: cryptography>=45.0.0
 Requires-Dist: structlog>=25.4.0
 Requires-Dist: redis>=5.0.0

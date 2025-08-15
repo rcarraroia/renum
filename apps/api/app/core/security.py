@@ -102,6 +102,35 @@ async def authenticate_user(email: str, password: str) -> Optional[Dict[str, Any
         return None
 
 
+async def register_user(email: str, password: str, name: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """Registra um novo usuário via Supabase."""
+    try:
+        user_metadata = {}
+        if name:
+            user_metadata["name"] = name
+            
+        response = supabase.auth.sign_up({
+            "email": email,
+            "password": password,
+            "options": {
+                "data": user_metadata
+            }
+        })
+        
+        if response.user:
+            return {
+                "user": {
+                    "id": response.user.id,
+                    "email": response.user.email,
+                    "name": response.user.user_metadata.get("name", ""),
+                },
+                "session": response.session
+            }
+        return None
+    except Exception:
+        return None
+
+
 def get_supabase_client() -> Client:
     """Dependency para obter cliente Supabase."""
     return supabase

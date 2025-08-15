@@ -6,8 +6,8 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import HTTPAuthorizationCredentials
 from datetime import timedelta
 
-from app.schemas.auth import LoginRequest, LoginResponse, RefreshTokenResponse, UserInfo
-from app.core.security import authenticate_user, create_access_token, get_current_user, security
+from app.schemas.auth import LoginRequest, LoginResponse, RefreshTokenResponse, UserInfo, RegisterRequest
+from app.core.security import authenticate_user, register_user, create_access_token, get_current_user, security
 from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -83,6 +83,48 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Depends(secu
     return RefreshTokenResponse(
         access_token=access_token,
         expires_in=settings.JWT_EXPIRE_MINUTES * 60  # em segundos
+    )
+
+
+@router.post("/signup", response_model=LoginResponse)
+async def signup(register_data: RegisterRequest):
+    """
+    Registra um novo usuário.
+    
+    Args:
+        register_data: Dados de registro (email, senha e nome opcional)
+        
+    Returns:
+        Token de acesso e informações do usuário
+        
+    Raises:
+        HTTPException: Se o registro falhar
+    """
+    # Registra com Supabase
+    auth_result = await register_user(register_data.email, register_data.password, register_data.name)
+    
+    if not auth_result:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Registration failed. Email may already be in use.",
+        )
+    
+    # Cria token JWT
+    access_token_expires = timedelta(minutes=settings.JWT_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": auth_result["user"]["id"], "email": auth_result["user"]["email"]},
+        expires_delta=access_token_expires
+    )
+    
+    return LoginResponse(
+        access_token=access_token,
+        token_type="bearer",
+        expires_in=settings.JWT_EXPIRE_MINUTES * 60,  # em segundos
+        user=UserInfo(
+            id=auth_result["user"]["id"],
+            email=auth_result["user"]["email"],
+            name=auth_result["user"]["name"]
+        )
     )
 
 

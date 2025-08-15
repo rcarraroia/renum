@@ -37,7 +37,7 @@ class TeamAgentConfig(BaseSchema):
     """Configuração de um agente na equipe."""
     
     input_source: str = Field(..., description="Fonte de entrada do agente")
-    conditions: List[Dict[str, Any]] = Field(default=[], description="Condições para execução")
+    conditions: List[Dict[str, Any]] = Field(default_factory=list, description="Condições para execução")
     timeout_minutes: Optional[int] = Field(None, ge=1, le=60, description="Timeout em minutos")
 
 
@@ -51,13 +51,22 @@ class TeamAgent(BaseSchema):
     config: TeamAgentConfig = Field(..., description="Configuração do agente")
 
 
+class TeamAgentCreate(BaseSchema):
+    """Agente para criação de equipe."""
+    
+    agent_id: UUID = Field(..., description="ID do agente no Suna")
+    role: AgentRole = Field(..., description="Papel do agente na equipe")
+    order: int = Field(..., ge=1, description="Ordem de execução")
+    config: TeamAgentConfig = Field(..., description="Configuração do agente")
+
+
 class TeamCreate(BaseSchema):
     """Schema para criação de equipe."""
     
     name: str = Field(..., min_length=1, max_length=100, description="Nome da equipe")
     description: Optional[str] = Field(None, max_length=500, description="Descrição da equipe")
     workflow_type: WorkflowType = Field(..., description="Tipo de workflow")
-    agents: List[TeamAgent] = Field(..., min_items=1, max_items=10, description="Agentes da equipe")
+    agents: List[TeamAgentCreate] = Field(..., min_items=1, max_items=10, description="Agentes da equipe")
     
     @validator('agents')
     def validate_agents_order(cls, v):
@@ -76,7 +85,7 @@ class TeamUpdate(BaseSchema):
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
     workflow_type: Optional[WorkflowType] = None
-    agents: Optional[List[TeamAgent]] = Field(None, min_items=1, max_items=10)
+    agents: Optional[List[TeamAgentCreate]] = Field(None, min_items=1, max_items=10)
     status: Optional[TeamStatus] = None
 
 

@@ -1,0 +1,34 @@
+Assunto: Próximos Passos — Integração e Início da Fase 1
+
+Olá, Kiro!
+
+Obrigado por completar a tarefa de mapeamento e estrutura. A sua entrega foi excelente e a documentação que você criou (backend_spec_draft.md e mapping_legacy_to_new_structure.md) é exatamente o que precisamos para dar o próximo passo.
+
+Vamos dar sequência ao projeto. Sua próxima tarefa é:
+
+1. Sincronizar o seu trabalho local com o repositório remoto:
+
+Por favor, faça um commit e um push de todo o trabalho que você fez.
+
+Use uma nova branch com um nome claro. Você pode usar os seguintes comandos no seu terminal:
+
+Bash
+
+# Crie uma nova branch para a sua feature
+git checkout -b feature/new-backend-architecture
+
+# Adicione todos os arquivos que você criou
+git add .
+
+# Faça o commit com uma mensagem clara
+git commit -m "feat(backend): Import and map legacy Renum backend with new architecture"
+
+# Envie para o repositório remoto
+git push -u origin feature/new-backend-architecture
+2. Iniciar a implementação da Fase 1 da API:
+
+Com o trabalho já no repositório, comece a implementação da Fase 1: Core API, conforme detalhado no backend_spec_draft.md que você mesmo criou.
+
+Priorize a implementação dos endpoints de Autenticação (Supabase) e gerenciamento de Equipes (teams.py).
+
+Por favor, me avise quando o push for concluído.

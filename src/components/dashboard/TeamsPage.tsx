@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +8,7 @@ import { Plus, Edit, Trash2, Play, Users, Settings } from 'lucide-react';
 import { TeamForm } from './TeamForm';
 import { TeamDetails } from './TeamDetails';
 import { Team } from '@/types/team';
-import { mockApi } from '@/services/mockApi';
+import { mockTeamApi } from '@/services/mockApi';
 import { useToast } from '@/hooks/use-toast';
 
 export function TeamsPage() {
@@ -28,8 +27,8 @@ export function TeamsPage() {
   const loadTeams = async () => {
     try {
       setLoading(true);
-      const data = await mockApi.getTeams();
-      setTeams(data);
+      const data = await mockTeamApi.getTeams();
+      setTeams(data.teams);
     } catch (error) {
       console.error('Error loading teams:', error);
       toast({
@@ -44,7 +43,7 @@ export function TeamsPage() {
 
   const handleCreateTeam = async (teamData: Partial<Team>) => {
     try {
-      const newTeam = await mockApi.createTeam(teamData);
+      const newTeam = await mockTeamApi.createTeam(teamData);
       setTeams(prev => [newTeam, ...prev]);
       setIsCreateDialogOpen(false);
       toast({
@@ -65,10 +64,12 @@ export function TeamsPage() {
     if (!selectedTeam) return;
     
     try {
-      const updatedTeam = await mockApi.updateTeam(selectedTeam.id, teamData);
-      setTeams(prev => prev.map(team => 
-        team.id === selectedTeam.id ? updatedTeam : team
-      ));
+      const updatedTeam = await mockTeamApi.updateTeam(selectedTeam.id, teamData);
+      if (updatedTeam) {
+        setTeams(prev => prev.map(team => 
+          team.id === selectedTeam.id ? updatedTeam : team
+        ));
+      }
       setIsEditDialogOpen(false);
       setSelectedTeam(null);
       toast({
@@ -87,7 +88,7 @@ export function TeamsPage() {
 
   const handleDeleteTeam = async (teamId: string) => {
     try {
-      await mockApi.deleteTeam(teamId);
+      await mockTeamApi.deleteTeam(teamId);
       setTeams(prev => prev.filter(team => team.id !== teamId));
       toast({
         title: 'Sucesso',
@@ -105,7 +106,7 @@ export function TeamsPage() {
 
   const handleExecuteTeam = async (teamId: string) => {
     try {
-      const execution = await mockApi.executeTeam(teamId, { 
+      const execution = await mockTeamApi.executeTeam(teamId, { 
         initial_prompt: 'Executar equipe via dashboard' 
       });
       toast({

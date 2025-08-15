@@ -4,43 +4,47 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { mockTeamApi } from '@/services/mockApi';
+import { api } from '@/services/api';
 import { SystemHealth } from '@/types/team';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Activity, 
-  Database, 
-  Wifi, 
-  Server, 
-  RefreshCw, 
-  CheckCircle, 
-  AlertTriangle, 
-  XCircle 
-} from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, RefreshCw, Database, Server, Wifi } from 'lucide-react';
 
 export function SystemHealthPage() {
-  const [health, setHealth] = useState<SystemHealth | null>(null);
+  const [healthData, setHealthData] = useState<SystemHealth | null>(null);
   const [loading, setLoading] = useState(true);
-  const [lastCheck, setLastCheck] = useState<Date>(new Date());
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchSystemHealth();
-    const interval = setInterval(fetchSystemHealth, 30000); // Auto-refresh a cada 30s
+    fetchHealthData();
+    
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchHealthData, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  const fetchSystemHealth = async () => {
+  const fetchHealthData = async () => {
     try {
-      const healthData = await mockTeamApi.getSystemHealth();
-      setHealth(healthData);
-      setLastCheck(new Date());
+      setLoading(true);
+      const data = await api.system.health();
+      setHealthData(data);
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching system health:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível verificar a saúde do sistema",
+        description: error instanceof Error ? error.message : "Não foi possível obter o status do sistema",
         variant: "destructive",
+      });
+      
+      // Set default error state
+      setHealthData({
+        status: 'down',
+        services: {
+          database: { status: 'unhealthy', latency_ms: 0 },
+          suna_backend: { status: 'unhealthy', latency_ms: 0 },
+          websocket: { status: 'unhealthy', connections: 0 }
+        }
       });
     } finally {
       setLoading(false);
@@ -53,92 +57,61 @@ export function SystemHealthPage() {
       case 'ok':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'degraded':
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
-      case 'down':
+        return <AlertCircle className="h-5 w-5 text-yellow-500" />;
       case 'unhealthy':
+      case 'down':
         return <XCircle className="h-5 w-5 text-red-500" />;
       default:
-        return <Activity className="h-5 w-5 text-gray-500" />;
+        return <AlertCircle className="h-5 w-5 text-gray-500" />;
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'healthy':
       case 'ok':
-        return 'secondary';
+        return <Badge className="bg-green-100 text-green-800">Saudável</Badge>;
       case 'degraded':
-        return 'outline';
-      case 'down':
+        return <Badge className="bg-yellow-100 text-yellow-800">Degradado</Badge>;
       case 'unhealthy':
-        return 'destructive';
-      default:
-        return 'outline';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'healthy':
-      case 'ok':
-        return 'Saudável';
-      case 'degraded':
-        return 'Degradado';
       case 'down':
-      case 'unhealthy':
-        return 'Indisponível';
+        return <Badge variant="destructive">Indisponível</Badge>;
       default:
-        return status;
+        return <Badge variant="outline">Desconhecido</Badge>;
     }
   };
 
   const getLatencyColor = (latency: number) => {
-    if (latency < 50) return 'text-green-600';
-    if (latency < 100) return 'text-yellow-600';
+    if (latency < 100) return 'text-green-600';
+    if (latency < 300) return 'text-yellow-600';
     return 'text-red-600';
   };
 
-  const getLatencyLevel = (latency: number) => {
-    if (latency < 50) return 'Excelente';
-    if (latency < 100) return 'Bom';
-    if (latency < 200) return 'Regular';
-    return 'Ruim';
+  const getLatencyProgress = (latency: number) => {
+    // Convert latency to a percentage (0-1000ms scale)
+    return Math.min((latency / 1000) * 100, 100);
   };
 
-  if (loading) {
+  if (loading && !healthData) {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">Saúde do Sistema</h1>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
             <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-16 bg-muted rounded"></div>
+              <CardHeader>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+                <div className="h-3 bg-muted rounded w-1/2"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="h-3 bg-muted rounded"></div>
+                  <div className="h-2 bg-muted rounded"></div>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
-      </div>
-    );
-  }
-
-  if (!health) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Saúde do Sistema</h1>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <XCircle className="h-12 w-12 text-red-500 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Erro ao carregar dados</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Não foi possível verificar a saúde do sistema
-            </p>
-            <Button onClick={fetchSystemHealth}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Tentar Novamente
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     );
   }
@@ -149,211 +122,173 @@ export function SystemHealthPage() {
         <div>
           <h1 className="text-3xl font-bold">Saúde do Sistema</h1>
           <p className="text-muted-foreground">
-            Monitore o status dos componentes do sistema
+            Monitore o status dos serviços do Renum
           </p>
+          {lastUpdated && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Última atualização: {lastUpdated.toLocaleString('pt-BR')}
+            </p>
+          )}
         </div>
-        <Button onClick={fetchSystemHealth} variant="outline">
-          <RefreshCw className="mr-2 h-4 w-4" />
+        <Button onClick={fetchHealthData} variant="outline" disabled={loading}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Atualizar
         </Button>
       </div>
 
-      {/* Status geral */}
+      {/* Status Geral */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              {getStatusIcon(health.status)}
-              <div>
-                <CardTitle className="text-xl">Status Geral</CardTitle>
-                <CardDescription>
-                  Última verificação: {lastCheck.toLocaleString('pt-BR')}
-                </CardDescription>
-              </div>
+            <div className="flex items-center space-x-2">
+              {getStatusIcon(healthData?.status || 'down')}
+              <CardTitle>Status Geral do Sistema</CardTitle>
             </div>
-            <Badge variant={getStatusColor(health.status)} className="text-base px-3 py-1">
-              {getStatusLabel(health.status)}
-            </Badge>
+            {getStatusBadge(healthData?.status || 'down')}
           </div>
         </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            {healthData?.status === 'ok' && 'Todos os serviços estão funcionando normalmente.'}
+            {healthData?.status === 'degraded' && 'Alguns serviços estão com performance reduzida.'}
+            {healthData?.status === 'down' && 'Um ou mais serviços estão indisponíveis.'}
+          </p>
+        </CardContent>
       </Card>
 
-      {/* Serviços */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Status dos Serviços */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Database */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Database className="h-5 w-5 text-muted-foreground" />
-                <CardTitle className="text-base">Database</CardTitle>
+                <Database className="h-5 w-5 text-blue-500" />
+                <CardTitle className="text-lg">Database</CardTitle>
               </div>
-              {getStatusIcon(health.services.database.status)}
+              {getStatusBadge(healthData?.services.database.status || 'unhealthy')}
             </div>
+            <CardDescription>Sistema de banco de dados</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Status:</span>
-              <Badge variant={getStatusColor(health.services.database.status)}>
-                {getStatusLabel(health.services.database.status)}
-              </Badge>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Latência:</span>
-              <span className={`text-sm font-medium ${getLatencyColor(health.services.database.latency_ms)}`}>
-                {health.services.database.latency_ms}ms
-              </span>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {getLatencyLevel(health.services.database.latency_ms)}
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Latência</span>
+                <span className={getLatencyColor(healthData?.services.database.latency_ms || 0)}>
+                  {healthData?.services.database.latency_ms || 0}ms
+                </span>
+              </div>
+              <Progress 
+                value={getLatencyProgress(healthData?.services.database.latency_ms || 0)} 
+                className="h-2"
+              />
             </div>
           </CardContent>
         </Card>
 
         {/* Suna Backend */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Server className="h-5 w-5 text-muted-foreground" />
-                <CardTitle className="text-base">Suna Backend</CardTitle>
+                <Server className="h-5 w-5 text-purple-500" />
+                <CardTitle className="text-lg">Suna Backend</CardTitle>
               </div>
-              {getStatusIcon(health.services.suna_backend.status)}
+              {getStatusBadge(healthData?.services.suna_backend.status || 'unhealthy')}
             </div>
+            <CardDescription>Serviço de execução de agentes</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Status:</span>
-              <Badge variant={getStatusColor(health.services.suna_backend.status)}>
-                {getStatusLabel(health.services.suna_backend.status)}
-              </Badge>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Latência:</span>
-              <span className={`text-sm font-medium ${getLatencyColor(health.services.suna_backend.latency_ms)}`}>
-                {health.services.suna_backend.latency_ms}ms
-              </span>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {getLatencyLevel(health.services.suna_backend.latency_ms)}
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Latência</span>
+                <span className={getLatencyColor(healthData?.services.suna_backend.latency_ms || 0)}>
+                  {healthData?.services.suna_backend.latency_ms || 0}ms
+                </span>
+              </div>
+              <Progress 
+                value={getLatencyProgress(healthData?.services.suna_backend.latency_ms || 0)} 
+                className="h-2"
+              />
             </div>
           </CardContent>
         </Card>
 
         {/* WebSocket */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Wifi className="h-5 w-5 text-muted-foreground" />
-                <CardTitle className="text-base">WebSocket</CardTitle>
+                <Wifi className="h-5 w-5 text-green-500" />
+                <CardTitle className="text-lg">WebSocket</CardTitle>
               </div>
-              {getStatusIcon(health.services.websocket.status)}
+              {getStatusBadge(healthData?.services.websocket.status || 'unhealthy')}
             </div>
+            <CardDescription>Conexões em tempo real</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Status:</span>
-              <Badge variant={getStatusColor(health.services.websocket.status)}>
-                {getStatusLabel(health.services.websocket.status)}
-              </Badge>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Conexões:</span>
-              <span className="text-sm font-medium">
-                {health.services.websocket.connections}
+            <div className="flex justify-between text-sm">
+              <span>Conexões Ativas</span>
+              <span className="font-medium">
+                {healthData?.services.websocket.connections || 0}
               </span>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Conexões ativas
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Métricas detalhadas */}
+      {/* Métricas Detalhadas */}
       <Card>
         <CardHeader>
-          <CardTitle>Métricas de Performance</CardTitle>
-          <CardDescription>
-            Desempenho dos componentes do sistema
-          </CardDescription>
+          <CardTitle>Métricas Detalhadas</CardTitle>
+          <CardDescription>Informações técnicas sobre o desempenho do sistema</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Database Response Time</span>
-              <span className={getLatencyColor(health.services.database.latency_ms)}>
-                {health.services.database.latency_ms}ms
-              </span>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <h4 className="font-medium">Database</h4>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <div className="flex justify-between">
+                  <span>Status:</span>
+                  <span>{healthData?.services.database.status || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Latência:</span>
+                  <span>{healthData?.services.database.latency_ms || 0}ms</span>
+                </div>
+              </div>
             </div>
-            <Progress 
-              value={Math.min((health.services.database.latency_ms / 200) * 100, 100)} 
-              className="h-2"
-            />
-          </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Suna Backend Response Time</span>
-              <span className={getLatencyColor(health.services.suna_backend.latency_ms)}>
-                {health.services.suna_backend.latency_ms}ms
-              </span>
+            <div className="space-y-2">
+              <h4 className="font-medium">Suna Backend</h4>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <div className="flex justify-between">
+                  <span>Status:</span>
+                  <span>{healthData?.services.suna_backend.status || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Latência:</span>
+                  <span>{healthData?.services.suna_backend.latency_ms || 0}ms</span>
+                </div>
+              </div>
             </div>
-            <Progress 
-              value={Math.min((health.services.suna_backend.latency_ms / 200) * 100, 100)} 
-              className="h-2"
-            />
-          </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>WebSocket Connections</span>
-              <span className="font-medium">
-                {health.services.websocket.connections}
-              </span>
+            <div className="space-y-2">
+              <h4 className="font-medium">WebSocket</h4>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <div className="flex justify-between">
+                  <span>Status:</span>
+                  <span>{healthData?.services.websocket.status || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Conexões:</span>
+                  <span>{healthData?.services.websocket.connections || 0}</span>
+                </div>
+              </div>
             </div>
-            <Progress 
-              value={Math.min((health.services.websocket.connections / 100) * 100, 100)} 
-              className="h-2"
-            />
           </div>
         </CardContent>
       </Card>
-
-      {/* Informações adicionais */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Dicas de Performance</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p>• Mantenha as conexões WebSocket abaixo de 50 para melhor performance</p>
-            <p>• Latência de database abaixo de 50ms é considerada excelente</p>
-            <p>• Verifique a conectividade com o Suna Backend regularmente</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Status dos Alertas</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-3 w-3 text-green-500" />
-              <span>Todos os serviços operando normalmente</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-3 w-3 text-green-500" />
-              <span>Nenhum alerta crítico ativo</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-3 w-3 text-green-500" />
-              <span>Performance dentro dos parâmetros</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

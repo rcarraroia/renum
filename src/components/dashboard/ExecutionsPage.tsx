@@ -1,17 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { mockTeamApi } from '@/services/mockApi';
+import { api } from '@/services/api';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { TeamExecution, Team } from '@/types/team';
 import { ExecutionDetails } from '@/components/dashboard/ExecutionDetails';
 import { useToast } from '@/hooks/use-toast';
-import { Play, Square, Eye, RefreshCw } from 'lucide-react';
+import { Play, Square, Eye, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 
 export function ExecutionsPage() {
   const [executions, setExecutions] = useState<TeamExecution[]>([]);
@@ -21,16 +19,83 @@ export function ExecutionsPage() {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const { toast } = useToast();
 
+  // WebSocket para atualizações em tempo real
+  const { 
+    isConnected: wsConnected, 
+    lastMessage, 
+    connect: connectWs, 
+    disconnect: disconnectWs 
+  } = useWebSocket('/executions/stream');
+
   useEffect(() => {
     fetchData();
+    // Conectar ao WebSocket para atualizações em tempo real
+    connectWs();
+
+    return () => {
+      disconnectWs();
+    };
   }, []);
+
+  // Processar mensagens do WebSocket
+  useEffect(() => {
+    if (lastMessage) {
+      console.log('Received WebSocket message:', lastMessage);
+      
+      switch (lastMessage.type) {
+        case 'execution_started':
+          setExecutions(prev => [lastMessage.data, ...prev]);
+          toast({
+            title: "Execução Iniciada",
+            description: `Nova execução iniciada: ${lastMessage.data.execution_id}`,
+          });
+          break;
+          
+        case 'execution_updated':
+          setExecutions(prev => prev.map(exec => 
+            exec.execution_id === lastMessage.data.execution_id 
+              ? { ...exec, ...lastMessage.data }
+              : exec
+          ));
+          break;
+          
+        case 'execution_completed':
+          setExecutions(prev => prev.map(exec => 
+            exec.execution_id === lastMessage.data.execution_id 
+              ? { ...exec, status: 'completed', completed_at: lastMessage.data.completed_at }
+              : exec
+          ));
+          toast({
+            title: "Execução Concluída",
+            description: `Execução ${lastMessage.data.execution_id} foi concluída`,
+          });
+          break;
+          
+        case 'execution_failed':
+          setExecutions(prev => prev.map(exec => 
+            exec.execution_id === lastMessage.data.execution_id 
+              ? { ...exec, status: 'failed' }
+              : exec
+          ));
+          toast({
+            title: "Execução Falhou",
+            description: `Execução ${lastMessage.data.execution_id} falhou`,
+            variant: "destructive",
+          });
+          break;
+          
+        default:
+          console.log('Unknown WebSocket message type:', lastMessage.type);
+      }
+    }
+  }, [lastMessage, toast]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const [executionsResponse, teamsResponse] = await Promise.all([
-        mockTeamApi.getExecutions(),
-        mockTeamApi.getTeams()
+        api.executions.list(),
+        api.teams.list()
       ]);
       setExecutions(executionsResponse.executions);
       setTeams(teamsResponse.teams);
@@ -38,7 +103,7 @@ export function ExecutionsPage() {
       console.error('Error fetching executions:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar as execuções",
+        description: error instanceof Error ? error.message : "Não foi possível carregar as execuções",
         variant: "destructive",
       });
     } finally {
@@ -50,7 +115,7 @@ export function ExecutionsPage() {
     if (!confirm('Tem certeza que deseja cancelar esta execução?')) return;
 
     try {
-      const success = await mockTeamApi.cancelExecution(executionId);
+      const success = await api.executions.cancel(executionId);
       if (success) {
         setExecutions(prev => prev.map(exec => 
           exec.execution_id === executionId 
@@ -66,7 +131,7 @@ export function ExecutionsPage() {
       console.error('Error cancelling execution:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível cancelar a execução",
+        description: error instanceof Error ? error.message : "Não foi possível cancelar a execução",
         variant: "destructive",
       });
     }
@@ -123,14 +188,32 @@ export function ExecutionsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Execuções</h1>
-          <p className="text-muted-foreground">
-            Monitore as execuções das suas equipes
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-muted-foreground">
+              Monitore as execuções das suas equipes
+            </p>
+            <div className="flex items-center gap-1">
+              {wsConnected ? (
+                <Wifi className="h-4 w-4 text-green-500" />
+              ) : (
+                <WifiOff className="h-4 w-4 text-red-500" />
+              )}
+              <span className="text-xs text-muted-foreground">
+                {wsConnected ? 'Conectado' : 'Desconectado'}
+              </span>
+            </div>
+          </div>
         </div>
-        <Button onClick={fetchData} variant="outline">
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Atualizar
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={connectWs} variant="outline" size="sm" disabled={wsConnected}>
+            <Wifi className="mr-2 h-4 w-4" />
+            Conectar WebSocket
+          </Button>
+          <Button onClick={fetchData} variant="outline">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
       {executions.length === 0 ? (

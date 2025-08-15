@@ -8,7 +8,7 @@ import { Plus, Edit, Trash2, Play, Users, Settings } from 'lucide-react';
 import { TeamForm } from './TeamForm';
 import { TeamDetails } from './TeamDetails';
 import { Team } from '@/types/team';
-import { mockTeamApi } from '@/services/mockApi';
+import { api } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 
 export function TeamsPage() {
@@ -27,13 +27,13 @@ export function TeamsPage() {
   const loadTeams = async () => {
     try {
       setLoading(true);
-      const data = await mockTeamApi.getTeams();
+      const data = await api.teams.list();
       setTeams(data.teams);
     } catch (error) {
       console.error('Error loading teams:', error);
       toast({
         title: 'Erro',
-        description: 'Falha ao carregar equipes',
+        description: error instanceof Error ? error.message : 'Falha ao carregar equipes',
         variant: 'destructive',
       });
     } finally {
@@ -43,7 +43,7 @@ export function TeamsPage() {
 
   const handleCreateTeam = async (teamData: Partial<Team>) => {
     try {
-      const newTeam = await mockTeamApi.createTeam(teamData);
+      const newTeam = await api.teams.create(teamData);
       setTeams(prev => [newTeam, ...prev]);
       setIsCreateDialogOpen(false);
       toast({
@@ -54,7 +54,7 @@ export function TeamsPage() {
       console.error('Error creating team:', error);
       toast({
         title: 'Erro',
-        description: 'Falha ao criar equipe',
+        description: error instanceof Error ? error.message : 'Falha ao criar equipe',
         variant: 'destructive',
       });
     }
@@ -64,7 +64,7 @@ export function TeamsPage() {
     if (!selectedTeam) return;
     
     try {
-      const updatedTeam = await mockTeamApi.updateTeam(selectedTeam.id, teamData);
+      const updatedTeam = await api.teams.update(selectedTeam.id, teamData);
       if (updatedTeam) {
         setTeams(prev => prev.map(team => 
           team.id === selectedTeam.id ? updatedTeam : team
@@ -80,7 +80,7 @@ export function TeamsPage() {
       console.error('Error updating team:', error);
       toast({
         title: 'Erro',
-        description: 'Falha ao atualizar equipe',
+        description: error instanceof Error ? error.message : 'Falha ao atualizar equipe',
         variant: 'destructive',
       });
     }
@@ -88,7 +88,7 @@ export function TeamsPage() {
 
   const handleDeleteTeam = async (teamId: string) => {
     try {
-      await mockTeamApi.deleteTeam(teamId);
+      await api.teams.delete(teamId);
       setTeams(prev => prev.filter(team => team.id !== teamId));
       toast({
         title: 'Sucesso',
@@ -98,7 +98,7 @@ export function TeamsPage() {
       console.error('Error deleting team:', error);
       toast({
         title: 'Erro',
-        description: 'Falha ao excluir equipe',
+        description: error instanceof Error ? error.message : 'Falha ao excluir equipe',
         variant: 'destructive',
       });
     }
@@ -106,7 +106,7 @@ export function TeamsPage() {
 
   const handleExecuteTeam = async (teamId: string) => {
     try {
-      const execution = await mockTeamApi.executeTeam(teamId, { 
+      const execution = await api.teams.execute(teamId, { 
         initial_prompt: 'Executar equipe via dashboard' 
       });
       toast({
@@ -117,7 +117,7 @@ export function TeamsPage() {
       console.error('Error executing team:', error);
       toast({
         title: 'Erro',
-        description: 'Falha ao executar equipe',
+        description: error instanceof Error ? error.message : 'Falha ao executar equipe',
         variant: 'destructive',
       });
     }

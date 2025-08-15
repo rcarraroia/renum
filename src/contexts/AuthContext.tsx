@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/services/api';
 import { AuthContextType, AuthState, LoginCredentials, SignupCredentials } from '@/types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -68,17 +69,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setAuthState(prev => ({ ...prev, loading: true }));
       
-      const { error } = await supabase.auth.signInWithPassword({
-        email: credentials.email,
-        password: credentials.password,
-      });
+      // Tentar primeiro com a API do backend
+      try {
+        const backendResponse = await api.auth.login(credentials.email, credentials.password);
+        console.log('Backend login successful:', backendResponse);
+        
+        // Se o backend retornar sucesso, fazer login no Supabase também
+        const { error: supabaseError } = await supabase.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password,
+        });
 
-      if (error) {
-        setAuthState(prev => ({ ...prev, loading: false }));
-        return { error: error.message };
+        if (supabaseError) {
+          console.warn('Supabase login failed, but backend succeeded:', supabaseError);
+          // Continuar mesmo se o Supabase falhar, pois o backend funcionou
+        }
+
+        return {};
+      } catch (backendError) {
+        console.log('Backend login failed, falling back to Supabase:', backendError);
+        
+        // Fallback para Supabase se o backend falhar
+        const { error: supabaseError } = await supabase.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password,
+        });
+
+        if (supabaseError) {
+          setAuthState(prev => ({ ...prev, loading: false }));
+          return { error: supabaseError.message };
+        }
+
+        return {};
       }
-
-      return {};
     } catch (error) {
       setAuthState(prev => ({ ...prev, loading: false }));
       return { error: 'Erro inesperado. Tente novamente.' };
@@ -93,6 +116,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setAuthState(prev => ({ ...prev, loading: true }));
       
+      // Tentar primeiro com a API do backend
+      try {
+        const backendResponse = await api.auth.signup(
+          credentials.email, 
+          credentials.password, 
+          credentials.name
+        );
+        console.log('Backend signup successful:', backendResponse);
+      } catch (backendError) {
+        console.log('Backend signup failed, proceeding with Supabase:', backendError);
+      }
+
+      // Sempre fazer signup no Supabase para gerenciar a sessão
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({

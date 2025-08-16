@@ -41,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           user = {
             id: session.user.id,
             email: session.user.email!,
-            name: profile?.name || session.user.email!,
+            name: profile?.name || session.user.user_metadata?.name || session.user.email!,
           };
         }
 
@@ -69,39 +69,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setAuthState(prev => ({ ...prev, loading: true }));
       
-      // Tentar primeiro com a API do backend
-      try {
-        const backendResponse = await api.auth.login(credentials.email, credentials.password);
-        console.log('Backend login successful:', backendResponse);
+      // Fazer login diretamente no Supabase
+      const { error: supabaseError } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      if (supabaseError) {
+        setAuthState(prev => ({ ...prev, loading: false }));
         
-        // Se o backend retornar sucesso, fazer login no Supabase também
-        const { error: supabaseError } = await supabase.auth.signInWithPassword({
-          email: credentials.email,
-          password: credentials.password,
-        });
-
-        if (supabaseError) {
-          console.warn('Supabase login failed, but backend succeeded:', supabaseError);
-          // Continuar mesmo se o Supabase falhar, pois o backend funcionou
+        // Tratar diferentes tipos de erro
+        if (supabaseError.message.includes('Email not confirmed')) {
+          return { 
+            error: 'Email não confirmado. Por favor, verifique sua caixa de entrada e clique no link de confirmação enviado para seu email.' 
+          };
+        } else if (supabaseError.message.includes('Invalid login credentials')) {
+          return { 
+            error: 'Email ou senha incorretos. Verifique suas credenciais e tente novamente.' 
+          };
+        } else {
+          return { 
+            error: supabaseError.message || 'Erro ao fazer login. Tente novamente.' 
+          };
         }
-
-        return {};
-      } catch (backendError) {
-        console.log('Backend login failed, falling back to Supabase:', backendError);
-        
-        // Fallback para Supabase se o backend falhar
-        const { error: supabaseError } = await supabase.auth.signInWithPassword({
-          email: credentials.email,
-          password: credentials.password,
-        });
-
-        if (supabaseError) {
-          setAuthState(prev => ({ ...prev, loading: false }));
-          return { error: supabaseError.message };
-        }
-
-        return {};
       }
+
+      return {};
     } catch (error) {
       setAuthState(prev => ({ ...prev, loading: false }));
       return { error: 'Erro inesperado. Tente novamente.' };
@@ -116,18 +109,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setAuthState(prev => ({ ...prev, loading: true }));
       
-      // Tentar primeiro com a API do backend
-      try {
-        const backendResponse = await api.auth.signup(
-          credentials.email, 
-          credentials.password, 
-          credentials.name
-        );
-        console.log('Backend signup successful:', backendResponse);
-      } catch (backendError) {
-        console.log('Backend signup failed, proceeding with Supabase:', backendError);
-      }
-
       // Sempre fazer signup no Supabase para gerenciar a sessão
       const redirectUrl = `${window.location.origin}/`;
       
@@ -144,7 +125,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         setAuthState(prev => ({ ...prev, loading: false }));
-        return { error: error.message };
+        
+        // Tratar diferentes tipos de erro de signup
+        if (error.message.includes('User already registered')) {
+          return { 
+            error: 'Este email já está cadastrado. Tente fazer login ou use outro email.' 
+          };
+        } else if (error.message.includes('Password should be at least')) {
+          return { 
+            error: 'A senha deve ter pelo menos 6 caracteres.' 
+          };
+        } else {
+          return { 
+            error: error.message || 'Erro ao criar conta. Tente novamente.' 
+          };
+        }
       }
 
       setAuthState(prev => ({ ...prev, loading: false }));

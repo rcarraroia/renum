@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Info } from 'lucide-react';
 
 const signupSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -39,7 +40,6 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
   });
 
   const onSubmit = async (data: SignupFormData) => {
-    // Cast the data to ensure type compatibility
     const { error } = await signup({
       name: data.name,
       email: data.email,
@@ -56,7 +56,8 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
     } else {
       toast({
         title: "Conta criada com sucesso!",
-        description: "Verifique seu email para confirmar a conta.",
+        description: "Verifique seu email para confirmar a conta antes de fazer login.",
+        duration: 8000,
       });
     }
   };
@@ -70,6 +71,14 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Alerta informativo sobre o processo */}
+        <Alert className="mb-4 border-amber-200 bg-amber-50">
+          <Info className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            Após criar sua conta, você receberá um email de confirmação. Clique no link para ativar sua conta.
+          </AlertDescription>
+        </Alert>
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Nome</Label>
@@ -77,6 +86,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
               id="name"
               type="text"
               placeholder="Seu nome completo"
+              autoComplete="name"
               {...register('name')}
               disabled={loading}
             />
@@ -91,6 +101,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
               id="email"
               type="email"
               placeholder="seu@email.com"
+              autoComplete="email"
               {...register('email')}
               disabled={loading}
             />
@@ -105,6 +116,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
               id="password"
               type="password"
               placeholder="••••••••"
+              autoComplete="new-password"
               {...register('password')}
               disabled={loading}
             />
@@ -119,6 +131,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
               id="confirmPassword"
               type="password"
               placeholder="••••••••"
+              autoComplete="new-password"
               {...register('confirmPassword')}
               disabled={loading}
             />

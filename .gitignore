@@ -22,3 +22,32 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# SUNA directory (separate repository - for local reference only)
+suna/
+
+# RENUM-SUNA-CORE directory (separate repository - for local reference only)
+**/renum-suna-core/
+
+# SUNA directory (separate repository - for local reference only)
+suna/
+
+# RENUM-SUNA-CORE directory (separate repository - for local reference only)
+docs/Documentos do projeto/renum-suna-core/
+
+# SUNA directory (separate repository - for local reference only)
+suna/
+
+# RENUM-SUNA-CORE directory (separate repository - for local reference only)
+**/renum-suna-core/
+
+# SUNA directory (separate repository - for local reference only)
+suna/
+
+# RENUM-SUNA-CORE directory (separate repository - for local reference only)
+docs/Documentos do projeto/renum-suna-core/
+
+# SUNA directory (separate repository - for local reference only)
+suna/
+# RENUM-SUNA-CORE directory (separate repository - for local reference only)
+docs/Documentos\ do\ projeto/renum-suna-core/

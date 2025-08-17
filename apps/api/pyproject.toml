@@ -1,0 +1,5 @@
+    # Logging
+    "structlog>=25.4.0",
+    
+    # Rate Limiting
+    "slowapi>=0.1.9",

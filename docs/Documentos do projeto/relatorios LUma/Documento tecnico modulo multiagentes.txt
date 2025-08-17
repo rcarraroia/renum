@@ -1,0 +1,321 @@
+📄 Documento Técnico — Módulo Multiagentes da RENUM
+1. Objetivo
+
+Implementar um módulo de multiagentes na plataforma RENUM, onde um Agente Orquestrador interage com o usuário final, coleta requisitos por meio de entrevista/questionário, propõe fluxos de automação e conecta subagentes especializados em ferramentas específicas (Gmail, Supabase, Meta, CRM, etc.).
+
+O módulo deve garantir:
+
+Flexibilidade para compor fluxos complexos.
+
+Escalabilidade na adição de novas ferramentas.
+
+Segurança com BYOC (Bring Your Own Credentials).
+
+Cobrança clara pelo uso de agentes, e não pelas credenciais.
+
+2. Componentes Principais
+2.1 Agente Orquestrador
+
+Atua como interface central com o usuário.
+
+Realiza anamnese/entrevista com perguntas progressivas para entender objetivos.
+
+Propõe fluxo legível com etapas e subagentes necessários.
+
+Explica por que escolheu cada subagente/ferramenta.
+
+Solicita confirmação explícita do usuário antes da execução.
+
+2.2 Subagentes Especializados
+
+Cada subagente é especializado em uma ferramenta específica.
+
+Exemplo: sa-gmail, sa-supabase, sa-meta, sa-tiktok, sa-crm.
+
+Publicados e versionados no painel administrativo da RENUM (RAM).
+
+Incluem manifesto JSON com:
+
+agent_id, version, capabilities, input_schema, policy.
+
+Dependências de credenciais (ex.: OAuth Gmail, API Key Supabase).
+
+2.3 Catálogo de Agentes
+
+Banco interno de subagentes aprovados.
+
+Cada item possui:
+
+Nome, versão, descrição.
+
+Capacidades e limites.
+
+Requisitos de credenciais.
+
+Consultado pelo Orquestrador para montar os fluxos.
+
+2.4 BYOC (Bring Your Own Credentials)
+
+Usuários devem conectar suas próprias credenciais para cada ferramenta.
+
+Suporte inicial: OAuth (Google, Meta), API Keys (Supabase, CRMs).
+
+Regras:
+
+Armazenamento por tenant.
+
+Escopos mínimos para reduzir riscos.
+
+Validação automática (teste de ping).
+
+Expiração monitorada com alertas.
+
+Múltiplas contas por serviço.
+
+2.5 UX para Conexão de Ferramentas
+
+Central de Conexões com status (Conectado / Expira em X / Erro).
+
+Guias passo-a-passo para cada serviço.
+
+Alertas de credenciais faltantes no momento da execução.
+
+Consentimento de escopos: usuário sabe quais permissões concede.
+
+3. Fluxo do Usuário
+
+Usuário interage com Agente Orquestrador (chat ou questionário).
+
+Orquestrador coleta requisitos e gera plano de automação (fluxo).
+
+Orquestrador identifica subagentes necessários.
+
+Sistema verifica se usuário já conectou as credenciais exigidas.
+
+Caso não, redireciona para Central de Conexões.
+
+Orquestrador apresenta plano final ao usuário → usuário confirma.
+
+Fluxo é executado, logs são gravados e consumo contabilizado.
+
+4. Tratamento de Ferramentas Não Suportadas
+
+Quando o usuário solicitar uma ferramenta não existente no catálogo:
+
+Resposta Inteligente com Alternativas
+
+Explicar que não há suporte direto.
+
+Sugerir alternativas já disponíveis.
+
+Fallback API Genérica
+
+Subagente “HTTP Request” que permite conexão manual com APIs públicas.
+
+Encaminhamento para Roadmap
+
+Pedido é automaticamente registrado como “Nova Integração Solicitada”.
+
+Integração Temporária via Conectores (Pipedream/n8n)
+
+Subagente genérico conecta via terceiros, com custo adicional.
+
+Oferta de Desenvolvimento Sob Demanda
+
+Usuário pode solicitar que a RENUM desenvolva integração oficial.
+
+5. Cobrança
+
+Baseada no uso de agentes/subagentes.
+
+Métricas possíveis:
+
+Execução de workflow.
+
+Número de steps/subagentes usados.
+
+Volume de chamadas externas.
+
+Ferramentas (APIs externas) são responsabilidade do usuário.
+
+6. Requisitos Técnicos
+6.1 Banco de Dados
+
+agents_registry → catálogo de subagentes.
+
+tenant_connections → credenciais por usuário/tenant.
+
+workflows / workflow_runs → planos executados e histórico.
+
+integration_requests → pedidos de novas ferramentas.
+
+6.2 API Interna
+
+Endpoint de execução de subagente:
+
+POST /internal/agents/{agent_id}:{version}/execute
+
+
+Body:
+
+{
+  "request_id": "uuid",
+  "tenant_id": "tenant-123",
+  "action": "send_email",
+  "params": { ... },
+  "context": { ... },
+  "idempotency_key": "uuid"
+}
+
+6.3 Segurança
+
+Criptografia de credenciais em repouso e trânsito.
+
+Políticas de menor privilégio (escopos mínimos).
+
+Logs sem dados sensíveis (PII mascarada).
+
+Auditoria completa de execuções (quem, quando, o quê).
+
+6.4 Resiliência
+
+Timeouts, retries e circuit breaker em cada subagente.
+
+Execução simulada (dry-run) antes da produção.
+
+Idempotência para evitar duplicações.
+
+Alertas de falha (ex.: credencial expirada, API fora do ar).
+
+7. Diferenciais Estratégicos
+
+Entrevista conversacional para criar fluxos sem conhecimento técnico.
+
+Explicabilidade: sempre mostra por que subagente foi escolhido.
+
+Biblioteca de casos prontos para acelerar onboarding.
+
+Fallback inteligente para ferramentas não mapeadas.
+
+Modelo de cobrança justo (paga-se pelo uso dos agentes).
+
+8. Roadmap Sugerido
+
+Fase 1 (MVP)
+
+Orquestrador conversacional.
+
+Subagentes: Gmail, Supabase.
+
+BYOC com API Keys.
+
+Execução de fluxos simples.
+
+Fase 2
+
+OAuth (Google, Meta).
+
+Catálogo versionado de subagentes.
+
+Fallback API Genérica.
+
+Central de Conexões.
+
+Fase 3
+
+Fallback via Pipedream/n8n.
+
+Biblioteca de fluxos prontos.
+
+Políticas de billing detalhadas.
+
+Roadmap automático de novas integrações.
+
+9. Critérios de Aceite (DoD)
+
+Usuário consegue criar fluxo básico via Orquestrador.
+
+Usuário conecta suas próprias credenciais (BYOC).
+
+Fluxo é validado, executado e logado corretamente.
+
+Subagentes só funcionam quando credenciais válidas estão ativas.
+
+Pedido de ferramenta não mapeada é tratado (alternativa + registro).
+
+✅ Conclusão
+O módulo multiagentes da RENUM permitirá entregar ao cliente flexibilidade máxima e segurança de credenciais, mantendo a escalabilidade interna da plataforma com subagentes versionados. O modelo garante redução de custos, maior controle e possibilidade de monetização justa baseada no uso real dos agentes.
+
+Renato, quer que eu já prepare também um diagrama simplificado (em ASCII ou UML) do fluxo Orquestrador → Subagentes → Execução, para anexarmos nesse documento técnico?
+
+Dito por si:
+sim
+Dito pelo ChatGPT:
+
+Perfeito — vou acrescentar ao documento técnico um diagrama simplificado do fluxo Orquestrador → Subagentes → Execução em dois formatos: ASCII (prático para copiar/colar em qualquer lugar) e Mermaid (se você for usar em markdown que suporte mermaid, como GitHub/GitLab/MD viewers). Também adiciono uma breve legenda para cada componente. Copie o bloco que preferir e cole no documento técnico original.
+
+Diagrama (ASCII — pronto para copiar)
+                             +-------------------+
+                             |     USUÁRIO       |
+                             | (Chat / Form / UI)|
+                             +---------+---------+
+                                       |
+                                       v
+                        +--------------+---------------+
+                        |   AGENTE ORQUESTRADOR (AO)   |
+                        | - Entrevista / Anamnese      |
+                        | - Geração de Plano (JSON)    |
+                        | - Validação & Consentimento  |
+                        +--------------+---------------+
+                                       |
+                      +----------------+-------------------+
+                      |                                    |
+                      v                                    v
+           +----------+-----------+              +---------+----------+
+           | SubAgent: sa-email    |              | SubAgent: sa-supabase |
+           | - capabilities: send  |              | - capabilities: read/write |
+           | - auth: tenant gmail  |              | - auth: tenant supabase  |
+           +----------+-----------+              +---------+----------+
+                      |                                    |
+                      v                                    v
+                +-----+-----+                      +-------+------+
+                | Gmail API |                      | Supabase API |
+                +-----------+                      +--------------+
+
+                      (outras branches...)
+                      |
+    +-----------------+------------------+
+    | SubAgent: sa-whatsapp / sa-crm ... |
+    +------------------------------------+
+                      |
+                      v
+                External APIs / Services
+
+Diagrama (Mermaid — use em Markdown com suporte a mermaid)
+
+```mermaid
+flowchart TD
+U[Usuário<br/>(Chat / Form / UI)] --> AO[Agente Orquestrador<br/>(Anamnese → Plano → Consent)]
+AO --> SA_Email[SubAgent: sa-email<br/>(send_email)]
+AO --> SA_Supabase[SubAgent: sa-supabase<br/>(read/write)]
+AO --> SA_Whats[SubAgent: sa-whatsapp<br/>(send_message)]
+SA_Email --> GmailAPI[Gmail API / SMTP]
+SA_Supabase --> SupabaseAPI[Supabase API]
+SA_Whats --> WhatsAPI[WhatsApp API / Provider]
+style AO fill:#f9f,stroke:#333,stroke-width:1px
+style SA_Email fill:#efe,stroke:#333
+style SA_Supabase fill:#efe,stroke:#333
+style SA_Whats fill:#efe,stroke:#333
+```
+
+Legenda / Notas rápidas
+
+Usuário: inicia via chat ou formulário dinâmico.
+
+Agente Orquestrador (AO): interpreta, decompoe em tarefas, escolhe subagentes no catálogo, pede consentimento (se necessário) e executa. Retorna plano e resultados.
+
+SubAgent: encapsula lógica da ferramenta (capabilities, auth, schema). Pode ser síncrono ou assíncrono.
+
+APIs Externas: serviços reais (Gmail, Supabase, WhatsApp providers, CRMs).
+
+Observabilidade / Billing (não mostrado no diagrama para manter simplicidade): cada request possui request_id e é auditado; métricas por agent_id.

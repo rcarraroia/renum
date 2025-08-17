@@ -1,0 +1,2028 @@
+Bom dia, preciso fazer um sessão de brainstorming com voce sobre nossa plataforma renum, nos terminamos onde a instalação do sistema suna na vps agora vamos desenvolver o sistema renum que será um orquestrador de toda plataforma.
+Agora nos vamos desenvolver o frontend pelo lovable.
+Antes o sistema estava estruturado assim: https://github.com/rcarraroia/renum-suna-core.git
+Hoje no projeto atual temos uma instalação na vps com sistema suna: https://github.com/kortix-ai/suna.git + o diretorio renum-backend o esta causando muitos erros, incompatibilidades e outros problemas
+Voce pode fazer a analise dos arquivos e do repositorio para iniciarmos a conversa? Nesse momento eu so preciso que voce me confirme que leu o material e entendeu o nosso projeto, me apresente um resumo curto de tudo que viu?
+Dito pelo ChatGPT:
+
+Li todo o material e entendi o projeto.
+Segue um resumo curto:
+
+O Renum é uma plataforma para orquestrar equipes de agentes de IA integradas ao backend Suna, permitindo execuções complexas em estratégias sequenciais, paralelas, pipeline ou condicionais.
+
+O sistema está dividido em:
+
+Backend Renum (FastAPI): CRUD de equipes, motor de execução, WebSocket tempo real, integração com API Suna, autenticação via Supabase, gerenciamento seguro de API keys.
+
+Frontend Renum (Next.js 15, TypeScript, Tailwind, React Query, Zustand): dashboard, criação/edição/execução de equipes, monitoramento em tempo real, sistema de notificações, gerenciamento de agentes, autenticação, interface responsiva.
+
+Integração Suna: execução individual de agentes, gerenciamento de threads e WebSocket para resultados.
+
+Banco Supabase: dados de usuários, equipes, execuções e logs.
+
+Arquitetura modular, com componentes reutilizáveis, hooks customizados, lazy loading, filtros e busca avançada, e tratamento robusto de erros.
+
+Se quiser, já consigo mapear contigo os pontos críticos de compatibilidade entre o código Suna instalado na VPS e o novo frontend/backend Renum para começar o brainstorming técnico.
+
+Dito por si:
+perfeito, nosso novo projeto vai ser estruturado da seguinte forma:
+Somente a Instalação em vps do sistema suna completo, porque assim podemos manter ela sempre atualizada com projeto original
+E vamos desenvolver um novo frontend renum atraves do lovable e vamos aproveitar o backend renum porque ja temos varios modulos desenvolvidos: https://github.com/rcarraroia/renum-suna-core/tree/main/renum-backend/app
+Como voce pode conferir no link acima.
+Hoje do projeto anterior nos temos uma pasta para renum-backend, uma pasta para renum-frontend e uma pasta para renum-admin.
+Em primeiro lugar qual a melhor estrutura para esse novo frontend?
+Dito pelo ChatGPT:
+
+Entendido.
+Pelo seu cenário — Suna na VPS atualizado direto do repositório original + frontend Renum novo via Lovable + aproveitamento do backend Renum existente — a melhor estrutura para o novo frontend deve ser:
+
+📂 Estrutura Recomendada para o Novo Frontend Renum
+
+Essa estrutura já vem preparada para manutenção fácil no Lovable, componentização alta e integração clara com o backend.
+
+renum-frontend/
+├── src/
+│   ├── components/            # Componentes reutilizáveis
+│   │   ├── ui/                 # Botões, inputs, modais, etc.
+│   │   ├── layout/             # Header, Sidebar, Footer, Breadcrumb
+│   │   ├── teams/              # Componentes específicos de Equipes
+│   │   ├── executions/         # Componentes específicos de Execuções
+│   │   ├── agents/             # Componentes para Agentes
+│   │   ├── notifications/      # Sistema de notificações
+│   │   └── websocket/          # Indicadores e monitores WebSocket
+│   │
+│   ├── pages/                  # Páginas Next.js (rotas)
+│   │   ├── dashboard/
+│   │   ├── teams/
+│   │   ├── executions/
+│   │   ├── agents/
+│   │   ├── settings/
+│   │   └── auth/               # Login, Registro, Recuperar senha
+│   │
+│   ├── hooks/                  # Hooks customizados
+│   │   ├── useAuth.ts
+│   │   ├── useTeams.ts
+│   │   ├── useExecutions.ts
+│   │   ├── useWebSocket.ts
+│   │   └── useNotifications.ts
+│   │
+│   ├── services/               # Clientes de API e integrações
+│   │   ├── api-client.ts       # Renum API
+│   │   ├── suna-client.ts      # Comunicação direta com Suna
+│   │   ├── react-query-hooks.ts
+│   │   └── websocket-client.ts
+│   │
+│   ├── store/                  # Zustand ou Redux (estado global)
+│   │   ├── authStore.ts
+│   │   ├── teamStore.ts
+│   │   ├── executionStore.ts
+│   │   └── notificationStore.ts
+│   │
+│   ├── utils/                   # Funções utilitárias
+│   ├── types/                   # Definições TypeScript
+│   ├── styles/                  # Tailwind config, estilos globais
+│   └── constants/               # Constantes do sistema
+│
+├── public/                      # Imagens, ícones e assets públicos
+├── .env.local                   # Variáveis de ambiente do frontend
+├── package.json
+├── tailwind.config.js
+├── tsconfig.json
+└── next.config.js
+
+🎯 Principais pontos dessa estrutura
+
+Separação clara por responsabilidade — cada área (equipes, execuções, agentes, auth) fica isolada.
+
+Independência do backend — toda a comunicação via services/api-client.ts para evitar dependência direta de endpoints no código de página.
+
+Compatibilidade com Lovable — o Lovable entende bem estruturas modulares no padrão src/components, src/pages e src/hooks.
+
+Escalabilidade futura — fácil criar novas rotas e features sem bagunçar o core.
+
+Integração limpa com o backend Renum — já previsto para consumir a API existente no renum-backend.
+
+Se quiser, posso já desenhar a arquitetura de integração entre esse novo frontend e o backend Renum, mostrando exatamente como o Lovable vai conversar com o Suna via backend, para evitar incompatibilidades que existiam no projeto anterior.
+Isso vai garantir que não repetimos os erros do renum-backend + renum-frontend antigo.
+
+Dito por si:
+Sim voce pode desenhar essa arquitetura mas nos ainda vamos poder utilizar a pasta do renum-backend que ja temos? O lovable so vai cuidar da parte de UX/UI toda a estrutura de backend e do admin no futuro sera desenvolvida pelo kiro
+Dito pelo ChatGPT:
+
+Sim — podemos e devemos continuar usando a pasta renum-backend que você já tem, porque ela já traz os módulos que funcionam e se integram com o Suna.
+O Lovable vai ficar 100% focado na camada de frontend (UX/UI), sem tocar no backend nem no admin.
+
+O Kiro seguirá responsável por evoluir o renum-backend e, futuramente, criar o renum-admin — ou seja, vamos manter a responsabilidade de cada stack bem separada.
+
+📐 Arquitetura de Integração – Novo Cenário
+┌──────────────────────────────────────────────────────────────┐
+│                        VPS – PRODUÇÃO                        │
+├──────────────────────────────────────────────────────────────┤
+│  SUNA Backend (original, atualizado do repo kortix-ai/suna)  │
+│  ├── Execução de agentes individuais                         │
+│  ├── Ferramentas e automações                                │
+│  ├── WebSocket para execução                                 │
+│  └── Integração com LLMs                                     │
+├──────────────────────────────────────────────────────────────┤
+│  RENUM Backend (pasta renum-backend, evoluído pelo Kiro)     │
+│  ├── API de equipes                                          │
+│  ├── Motor de execução                                       │
+│  ├── Orquestrador de workflows                               │
+│  ├── WebSocket de monitoramento                              │
+│  ├── Gerenciamento de usuários                               │
+│  └── Integração com Suna Backend                             │
+├──────────────────────────────────────────────────────────────┤
+│  Banco de Dados (Supabase)                                   │
+│  ├── Tabelas do Renum                                        │
+│  └── Autenticação + RLS                                      │
+└──────────────────────────────────────────────────────────────┘
+
+           ▲
+           │ API REST / WebSocket
+           ▼
+
+┌──────────────────────────────────────────────────────────────┐
+│         Frontend Renum (Lovable – UX/UI Next.js 15)           │
+├──────────────────────────────────────────────────────────────┤
+│  Páginas de usuário final                                    │
+│  Dashboard, Equipes, Execuções, Agentes, Configurações       │
+│  Consumo de APIs do RENUM Backend                            │
+│  Integração WebSocket para tempo real                        │
+│  Sistema de notificações                                     │
+└──────────────────────────────────────────────────────────────┘
+
+🔹 Como vai funcionar na prática:
+
+Frontend (Lovable) → Renum Backend: faz todas as chamadas de API e WebSocket para orquestrar agentes.
+
+Renum Backend → Suna Backend: executa os agentes individualmente e retorna os resultados.
+
+Suna Backend → Renum Backend: responde execuções e envia eventos WebSocket.
+
+Renum Backend → Frontend: entrega dados prontos, formatados para o UX.
+
+Supabase: centraliza autenticação, controle de acesso e dados.
+
+🔹 Vantagens dessa abordagem
+
+Atualização contínua do Suna sem quebrar o Renum.
+
+Frontend desacoplado — qualquer mudança no backend não exige refazer a UI inteira.
+
+Reaproveitamento total do backend que o Kiro já desenvolveu.
+
+Evolução paralela:
+
+Kiro mexe no backend/admin
+
+Lovable cuida só da experiência visual e navegação.
+
+Menos conflitos de código — cada camada tem seu repositório.
+
+Se quiser, posso te montar o checklist de implantação dessa nova estrutura, já definindo:
+
+qual pasta/repo fica com Lovable,
+
+qual continua no backend,
+
+e como configuramos as variáveis .env para conectar os dois.
+
+Dito por si:
+Voce poderia ja montar o primeiro documento em md para ser utilizado pelo kiro entender esse novo modelo e nova arquitetura que estamos pensando.
+Depois seguimos com nossa sessão. pode ser?
+Dito pelo ChatGPT:
+
+Claro 👍
+Vou preparar um documento em Markdown claro e objetivo para o Kiro, explicando o novo modelo, a arquitetura e o papel de cada parte.
+
+# 📐 Nova Arquitetura da Plataforma RENUM
+
+**Data:** 10/08/2025  
+**Responsável:** Renato Carraro  
+**Destinatário:** Kiro (Desenvolvimento Backend/Admin)  
+**Objetivo:** Definir a nova arquitetura e responsabilidades para evolução do projeto RENUM
+
+---
+
+## 🎯 Visão Geral
+
+O projeto RENUM será reestruturado para garantir:
+1. **Atualização contínua** do Suna Backend sem causar quebras no sistema.
+2. **Separação clara** entre Frontend (Lovable) e Backend/Admin (Kiro).
+3. **Escalabilidade** para futuras funcionalidades sem reescrever código existente.
+
+---
+
+## 🏗 Estrutura Geral
+
+### 1. **Suna Backend**
+- **Origem:** Repositório oficial `kortix-ai/suna`
+- **Instalação:** VPS dedicada
+- **Função:** Execução de agentes individuais de IA, ferramentas e automações.
+- **Manutenção:** Sempre sincronizado com o repositório oficial para receber novas features e correções.
+- **Não sofre alterações diretas** — customizações acontecem no RENUM Backend.
+
+---
+
+### 2. **Renum Backend** (Kiro)
+- **Origem:** `renum-suna-core/renum-backend`
+- **Função:**
+  - Orquestrar **equipes de agentes** com estratégias:
+    - Sequencial
+    - Paralela
+    - Pipeline
+    - Condicional
+  - Controlar **execuções e workflows**.
+  - Gerenciar **usuários, autenticação e permissões**.
+  - Fornecer **API REST e WebSocket** para o Frontend.
+  - Integrar com Suna Backend para execução real.
+  - Gerenciar **API Keys** e configuração por usuário.
+- **Manutenção:** Evoluir módulos existentes, criar novos endpoints e otimizar performance.
+- **Futuro:** Servirá também ao **Renum Admin** (painel administrativo).
+
+---
+
+### 3. **Frontend RENUM** (Lovable)
+- **Origem:** Novo projeto Lovable (Next.js 15 + TypeScript + TailwindCSS).
+- **Função:**
+  - Implementar **UX/UI** do painel do usuário final.
+  - Consumir **APIs do RENUM Backend** para todas as funcionalidades.
+  - Monitorar execuções em tempo real via WebSocket.
+  - Oferecer dashboards, formulários, notificações e visualização de dados.
+- **Manutenção:** Exclusivamente pelo Lovable, sem acoplamento de lógica de backend.
+
+---
+
+### 4. **Renum Admin** (Futuro - Kiro)
+- **Função:** Painel administrativo interno.
+- **Recursos:**
+  - Gerenciamento de usuários e permissões.
+  - Estatísticas globais da plataforma.
+  - Logs e monitoramento avançado.
+  - Configurações de sistema.
+- **Tecnologia sugerida:** Pode seguir o stack atual do backend (FastAPI + template administrativo).
+
+---
+
+## 🔄 Fluxo de Dados
+
+
+
+[Frontend (Lovable)] ⇄ [Renum Backend (Kiro)] ⇄ [Suna Backend (Original)]
+│ │
+▼ ▼
+WebSocket Execução de agentes
+│ │
+▼ ▼
+Usuário final LLMs / Ferramentas externas
+
+
+---
+
+## 📦 Repositórios e Pastas
+
+| Componente        | Origem / Repositório                           | Responsável | Observações |
+|-------------------|-----------------------------------------------|-------------|-------------|
+| **Suna Backend**  | `github.com/kortix-ai/suna`                    | —           | Apenas manter atualizado |
+| **Renum Backend** | `github.com/rcarraroia/renum-suna-core` → `renum-backend` | Kiro        | Reaproveitar código já pronto e expandir |
+| **Frontend RENUM**| Novo projeto Lovable                           | Lovable     | Construção completa do UI/UX |
+| **Renum Admin**   | Novo projeto (posterior)                       | Kiro        | Painel administrativo |
+
+---
+
+## ⚙ Configuração de Ambientes
+
+### `.env` Frontend (Lovable)
+```env
+NEXT_PUBLIC_API_URL=https://{dominio-backend}/api/v1
+NEXT_PUBLIC_WS_URL=wss://{dominio-backend}/ws
+
+.env Backend (Renum)
+SUNABACKEND_URL=https://{dominio-suna}
+SUNABACKEND_WS=wss://{dominio-suna}/ws
+DATABASE_URL=postgresql://...
+SUPABASE_URL=https://...
+SUPABASE_KEY=...
+JWT_SECRET=...
+
+📌 Próximos Passos
+
+Manter Suna na VPS atualizado com pull periódico do repositório original.
+
+Separar claramente código do RENUM Backend e do Frontend.
+
+Kiro: revisar módulos do renum-backend e definir endpoints que o Lovable vai consumir.
+
+Lovable: iniciar desenvolvimento da camada visual, seguindo a especificação oficial do frontend.
+
+Planejar início do projeto Renum Admin após o frontend do usuário final estar estável.
+
+📜 Resumo
+
+Suna: motor de execução (inalterado).
+
+Renum Backend: orquestrador + API + WebSocket (Kiro).
+
+Frontend RENUM: UX/UI no Lovable.
+
+Renum Admin: painel interno (Kiro, no futuro).
+
+Essa separação garante atualizações independentes, baixa chance de quebra e escala fácil para novos módulos.
+
+Lovable = Experiência do usuário
+Kiro = Cérebro e controle do sistema
+Suna = Motor de IA
+
+
+---
+
+Se quiser, já posso preparar **o checklist de integração Lovable ↔ Renum Backend** para que ele também entenda como as chamadas de API e WebSocket vão acontecer. Isso fecha o cenário para começar a implementação sem dúvidas.
+
+Dito por si:
+sim pode completar com cheklist
+Dito pelo ChatGPT:
+
+Perfeito, vou complementar o documento com um Checklist de Integração Lovable ↔ Renum Backend.
+Assim o Kiro já entende como a comunicação será feita e o que precisa estar pronto para o frontend funcionar.
+
+## ✅ Checklist de Integração Lovable ↔ Renum Backend
+
+Este checklist define **o que o Lovable precisa consumir** e **o que o Kiro deve garantir no backend** para que o novo frontend funcione de ponta a ponta.
+
+---
+
+### 1. **Autenticação e Sessão**
+- [ ] Endpoint `POST /auth/login` funcionando com Supabase ou JWT interno.
+- [ ] Endpoint `POST /auth/register` para novos usuários.
+- [ ] Endpoint `GET /auth/me` para retornar dados do usuário autenticado.
+- [ ] Refresh automático de tokens configurado.
+- [ ] Permissões e RLS no banco para isolar dados de cada usuário.
+
+---
+
+### 2. **Equipes**
+- [ ] `GET /api/v1/teams` — Listar equipes do usuário.
+- [ ] `POST /api/v1/teams` — Criar nova equipe.
+- [ ] `GET /api/v1/teams/{id}` — Obter detalhes da equipe.
+- [ ] `PUT /api/v1/teams/{id}` — Editar equipe existente.
+- [ ] `DELETE /api/v1/teams/{id}` — Remover equipe.
+- [ ] Suporte a **workflow_definition** (sequential, parallel, pipeline, conditional).
+- [ ] Validação no backend para garantir integridade do workflow.
+
+---
+
+### 3. **Execuções**
+- [ ] `POST /api/v1/teams/{id}/execute` — Iniciar execução.
+- [ ] `GET /api/v1/executions` — Listar execuções do usuário.
+- [ ] `GET /api/v1/executions/{id}` — Status + detalhes de uma execução.
+- [ ] `GET /api/v1/executions/{id}/result` — Resultado final.
+- [ ] `GET /api/v1/executions/{id}/logs` — Logs completos.
+- [ ] `POST /api/v1/executions/{id}/stop` — Encerrar execução em andamento.
+
+---
+
+### 4. **Agentes**
+- [ ] `GET /api/v1/agents` — Listar agentes disponíveis (via integração com Suna).
+- [ ] `POST /api/v1/agents` — Criar novo agente.
+- [ ] `GET /api/v1/agents/{id}` — Detalhes de um agente.
+- [ ] `PUT /api/v1/agents/{id}` — Atualizar agente.
+- [ ] `DELETE /api/v1/agents/{id}` — Remover agente.
+
+---
+
+### 5. **WebSocket**
+- [ ] Endpoint `/ws/executions/{id}/monitor` para acompanhar execução.
+- [ ] Eventos emitidos:
+  - `status_update`
+  - `agent_status_update`
+  - `progress_update`
+  - `result_update`
+  - `error_update`
+- [ ] Sistema de reconexão automática configurado.
+- [ ] Autenticação via token no WebSocket.
+
+---
+
+### 6. **Notificações**
+- [ ] Endpoint para listar notificações não lidas.
+- [ ] Evento WebSocket para novas notificações em tempo real.
+- [ ] Marcar como lida (`PATCH /notifications/{id}`).
+- [ ] Limpar todas as notificações (`DELETE /notifications`).
+
+---
+
+### 7. **Configurações do Usuário**
+- [ ] Endpoint para salvar API Keys (`POST /api/v1/api-keys`).
+- [ ] Listar API Keys do usuário (`GET /api/v1/api-keys`).
+- [ ] Deletar API Key (`DELETE /api/v1/api-keys/{service}`).
+- [ ] Alterar preferências (tema, notificações, etc.).
+
+---
+
+### 8. **Infraestrutura**
+- [ ] Variáveis `.env` do backend configuradas para apontar para o Suna Backend.
+- [ ] CORS liberado para o domínio do frontend Lovable.
+- [ ] HTTPS habilitado no backend e WebSocket seguro (wss://).
+
+---
+
+## 📌 Observações Finais
+- **Responsabilidade Kiro**: Backend Renum e integração com Suna.
+- **Responsabilidade Lovable**: Implementação da interface e consumo de APIs.
+- **Benefício dessa separação**: Cada camada evolui de forma independente, sem bloqueios.
+
+
+
+Se quiser, eu já posso aproveitar e montar um diagrama visual do fluxo API + WebSocket para incluir nesse mesmo documento, ajudando o Kiro a visualizar como o frontend conversa com o backend e como o backend se conecta ao Suna.
+Isso fecha a explicação técnica de forma visual. Quer que eu já adicione?
+
+Dito por si:
+Luma, faça tudo de uma so vez o que precisa sobre o que ja conversamos porque ainda temos mais coisas pra conversar. ok
+Dito pelo ChatGPT:
+
+Perfeito, Renato.
+Vou te entregar um único documento completo em Markdown contendo:
+
+Visão geral da nova arquitetura
+
+Descrição de cada camada
+
+Fluxo de dados
+
+Checklist de integração Lovable ↔ Renum Backend
+
+Diagrama visual do fluxo API + WebSocket
+
+Assim já fechamos essa parte e seguimos para os próximos assuntos sem voltar nesse ponto.
+
+# 📐 Nova Arquitetura da Plataforma RENUM
+
+**Data:** 10/08/2025  
+**Responsável:** Renato Carraro  
+**Destinatário:** Kiro (Desenvolvimento Backend/Admin)  
+**Objetivo:** Definir a nova arquitetura e responsabilidades para evolução do projeto RENUM
+
+---
+
+## 🎯 Visão Geral
+
+O projeto RENUM será reestruturado para garantir:
+1. **Atualização contínua** do Suna Backend sem causar quebras no sistema.
+2. **Separação clara** entre Frontend (Lovable) e Backend/Admin (Kiro).
+3. **Escalabilidade** para futuras funcionalidades sem reescrever código existente.
+
+---
+
+## 🏗 Estrutura Geral
+
+### 1. **Suna Backend**
+- **Origem:** Repositório oficial `kortix-ai/suna`
+- **Instalação:** VPS dedicada
+- **Função:** Execução de agentes individuais de IA, ferramentas e automações.
+- **Manutenção:** Sempre sincronizado com o repositório oficial para receber novas features e correções.
+- **Não sofre alterações diretas** — customizações acontecem no RENUM Backend.
+
+---
+
+### 2. **Renum Backend** (Kiro)
+- **Origem:** `renum-suna-core/renum-backend`
+- **Função:**
+  - Orquestrar **equipes de agentes** com estratégias:
+    - Sequencial
+    - Paralela
+    - Pipeline
+    - Condicional
+  - Controlar **execuções e workflows**.
+  - Gerenciar **usuários, autenticação e permissões**.
+  - Fornecer **API REST e WebSocket** para o Frontend.
+  - Integrar com Suna Backend para execução real.
+  - Gerenciar **API Keys** e configuração por usuário.
+- **Manutenção:** Evoluir módulos existentes, criar novos endpoints e otimizar performance.
+- **Futuro:** Servirá também ao **Renum Admin** (painel administrativo).
+
+---
+
+### 3. **Frontend RENUM** (Lovable)
+- **Origem:** Novo projeto Lovable (Next.js 15 + TypeScript + TailwindCSS).
+- **Função:**
+  - Implementar **UX/UI** do painel do usuário final.
+  - Consumir **APIs do RENUM Backend** para todas as funcionalidades.
+  - Monitorar execuções em tempo real via WebSocket.
+  - Oferecer dashboards, formulários, notificações e visualização de dados.
+- **Manutenção:** Exclusivamente pelo Lovable, sem acoplamento de lógica de backend.
+
+---
+
+### 4. **Renum Admin** (Futuro - Kiro)
+- **Função:** Painel administrativo interno.
+- **Recursos:**
+  - Gerenciamento de usuários e permissões.
+  - Estatísticas globais da plataforma.
+  - Logs e monitoramento avançado.
+  - Configurações de sistema.
+- **Tecnologia sugerida:** Pode seguir o stack atual do backend (FastAPI + template administrativo).
+
+---
+
+## 🔄 Fluxo de Dados
+
+
+
+[Frontend (Lovable)] ⇄ [Renum Backend (Kiro)] ⇄ [Suna Backend (Original)]
+│ │
+▼ ▼
+WebSocket Execução de agentes
+│ │
+▼ ▼
+Usuário final LLMs / Ferramentas externas
+
+
+---
+
+## 📦 Repositórios e Pastas
+
+| Componente        | Origem / Repositório                           | Responsável | Observações |
+|-------------------|-----------------------------------------------|-------------|-------------|
+| **Suna Backend**  | `github.com/kortix-ai/suna`                    | —           | Apenas manter atualizado |
+| **Renum Backend** | `github.com/rcarraroia/renum-suna-core` → `renum-backend` | Kiro        | Reaproveitar código já pronto e expandir |
+| **Frontend RENUM**| Novo projeto Lovable                           | Lovable     | Construção completa do UI/UX |
+| **Renum Admin**   | Novo projeto (posterior)                       | Kiro        | Painel administrativo |
+
+---
+
+## ⚙ Configuração de Ambientes
+
+### `.env` Frontend (Lovable)
+```env
+NEXT_PUBLIC_API_URL=https://{dominio-backend}/api/v1
+NEXT_PUBLIC_WS_URL=wss://{dominio-backend}/ws
+
+.env Backend (Renum)
+SUNABACKEND_URL=https://{dominio-suna}
+SUNABACKEND_WS=wss://{dominio-suna}/ws
+DATABASE_URL=postgresql://...
+SUPABASE_URL=https://...
+SUPABASE_KEY=...
+JWT_SECRET=...
+
+✅ Checklist de Integração Lovable ↔ Renum Backend
+1. Autenticação e Sessão
+
+ POST /auth/login — login via Supabase ou JWT interno.
+
+ POST /auth/register — cadastro de usuários.
+
+ GET /auth/me — dados do usuário autenticado.
+
+ Refresh automático de tokens.
+
+ Permissões e RLS no banco.
+
+2. Equipes
+
+ GET /api/v1/teams — listar equipes.
+
+ POST /api/v1/teams — criar equipe.
+
+ GET /api/v1/teams/{id} — detalhes.
+
+ PUT /api/v1/teams/{id} — editar.
+
+ DELETE /api/v1/teams/{id} — remover.
+
+ Suporte a tipos de workflow.
+
+ Validação backend.
+
+3. Execuções
+
+ POST /api/v1/teams/{id}/execute — iniciar.
+
+ GET /api/v1/executions — listar.
+
+ GET /api/v1/executions/{id} — status.
+
+ GET /api/v1/executions/{id}/result — resultado.
+
+ GET /api/v1/executions/{id}/logs — logs.
+
+ POST /api/v1/executions/{id}/stop — encerrar.
+
+4. Agentes
+
+ GET /api/v1/agents — listar.
+
+ POST /api/v1/agents — criar.
+
+ GET /api/v1/agents/{id} — detalhes.
+
+ PUT /api/v1/agents/{id} — atualizar.
+
+ DELETE /api/v1/agents/{id} — remover.
+
+5. WebSocket
+
+ /ws/executions/{id}/monitor — monitoramento.
+
+ Eventos:
+
+status_update
+
+agent_status_update
+
+progress_update
+
+result_update
+
+error_update
+
+ Reconexão automática.
+
+ Autenticação via token.
+
+6. Notificações
+
+ Listar notificações.
+
+ Evento WebSocket para novas notificações.
+
+ Marcar como lida (PATCH /notifications/{id}).
+
+ Limpar todas (DELETE /notifications).
+
+7. Configurações do Usuário
+
+ Salvar API Keys.
+
+ Listar API Keys.
+
+ Deletar API Key.
+
+ Alterar preferências.
+
+8. Infraestrutura
+
+ Variáveis .env backend apontando para o Suna.
+
+ CORS liberado para domínio do frontend.
+
+ HTTPS no backend e WebSocket seguro (wss://).
+
+📊 Diagrama Visual – Fluxo API + WebSocket
+          ┌─────────────────────────┐
+          │  Frontend (Lovable)     │
+          │  - Next.js 15           │
+          │  - UI/UX                │
+          │  - React Query/Zustand  │
+          └───────────▲─────────────┘
+                      │ REST / WS
+                      ▼
+          ┌─────────────────────────┐
+          │  Renum Backend (Kiro)   │
+          │  - FastAPI              │
+          │  - Orquestrador         │
+          │  - Integração Suna      │
+          │  - Supabase             │
+          └───────────▲─────────────┘
+                      │ REST / WS
+                      ▼
+          ┌─────────────────────────┐
+          │  Suna Backend (Original)│
+          │  - Execução de agentes  │
+          │  - Ferramentas IA       │
+          │  - WebSocket interno    │
+          └─────────────────────────┘
+
+📜 Resumo
+
+Suna = motor de execução (inalterado).
+
+Renum Backend = orquestrador + API + WebSocket (Kiro).
+
+Frontend RENUM = UX/UI no Lovable.
+
+Renum Admin = painel interno (Kiro, no futuro).
+
+Separação garante atualizações independentes, baixa chance de quebra e escalabilidade.
+
+Lovable = Experiência do usuário
+Kiro = Cérebro e controle do sistema
+Suna = Motor de IA
+
+
+---
+
+Se quiser, eu já posso na próxima etapa **começar o mapeamento das rotas e componentes do Lovable** com base nessa arquitetura para que o frontend seja iniciado sem dependências mal definidas.  
+Assim fechamos backend e frontend em paralelo.
+
+Dito por si:
+não sobre o frontend precisamos conversar sobre como vai ser essa nova estrutura em separado. A documentação que voce desenvolveu é para o kiro dev. Certo, pra ele saber como integrar os modulos? ou tem partes que sao para lovable tambem? precisamos separar isso porque se nao os dois vao desenolver a mesma coisa de modos diferentes. 
+Dito pelo ChatGPT:
+
+Entendi, Renato.
+A documentação que te entreguei é majoritariamente para o Kiro, porque define arquitetura, integrações e responsabilidades do Renum Backend em relação ao Suna e ao Frontend.
+
+Mas, sim — existem partes que impactam o Lovable e que precisam ser separadas** para não gerar sobreposição**.
+
+📌 Separação do que é Kiro vs Lovable no documento
+Parte exclusiva do Kiro (Backend/Admin)
+
+Estrutura geral do Suna Backend + Renum Backend + integração.
+
+Configuração .env do backend.
+
+Checklist de endpoints e WebSocket que devem ser implementados/garantidos.
+
+Regras de autenticação e RLS no banco.
+
+Integração com Suna Backend (REST/WS).
+
+Orquestração de workflows (sequencial, paralelo, pipeline, condicional).
+
+Controle de execução, logs e API Keys.
+
+Rotas administrativas (futuro Renum Admin).
+
+Parte que também é para o Lovable (Frontend)
+
+Fluxo de dados entre frontend ↔ backend.
+
+Configuração .env do frontend (NEXT_PUBLIC_API_URL, NEXT_PUBLIC_WS_URL).
+
+Lista de endpoints e eventos WebSocket que o frontend vai consumir.
+
+Padrões de autenticação no cliente.
+
+Estrutura de comunicação em tempo real.
+
+Fluxo de notificações e APIs relacionadas.
+
+Campos e formatos esperados nas respostas da API.
+
+💡 Ajuste que eu recomendo:
+Criar dois documentos separados, mas com um anexo comum para as APIs.
+
+Documento Backend (Kiro)
+
+Detalhes técnicos da arquitetura.
+
+Integração com Suna.
+
+Regras e validações internas.
+
+Documento Frontend (Lovable)
+
+Lista de endpoints disponíveis.
+
+Estrutura de dados das respostas.
+
+Eventos WebSocket que podem ser assinados.
+
+Exemplos de payloads.
+
+Anexo API (Comum aos dois)
+
+Referência unificada das rotas REST e eventos WS.
+
+Define contrato entre backend e frontend.
+
+Se quiser, eu já posso quebrar o documento que te entreguei em duas versões:
+
+Uma só para o Kiro (foco backend).
+
+Uma só para o Lovable (foco frontend).
+
+Assim evitamos que os dois desenvolvam “dois sistemas diferentes” para o mesmo objetivo.
+Quer que eu já faça essa separação agora?
+
+Dito por si:
+sera melhor, crie um documento para cada. Utilize o editor para termos um so bloco de informaçoes para cada assistente assim basta copiar e colar entendeu
+Dito pelo ChatGPT:
+
+Perfeito, Renato.
+Vou organizar agora em dois blocos separados, prontos para copiar e colar — um para o Kiro (backend/admin) e outro para o Lovable (frontend).
+O conteúdo será adaptado para cada papel, mas mantendo coerência entre eles.
+
+📄 Documento 1 – Kiro (Backend/Admin)
+# 🖥 Arquitetura e Responsabilidades – Kiro (Renum Backend/Admin)
+
+**Data:** 10/08/2025  
+**Responsável:** Renato Carraro  
+**Destinatário:** Kiro  
+**Objetivo:** Definir estrutura e integrações do Renum Backend com Suna e Frontend.
+
+---
+
+## 🎯 Função Geral do Kiro
+- Desenvolver e manter o **Renum Backend**.
+- Integrar com o **Suna Backend**.
+- Fornecer API REST + WebSocket para o frontend Lovable.
+- Garantir segurança, performance e escalabilidade.
+- Preparar infraestrutura para o **Renum Admin** (painel administrativo futuro).
+
+---
+
+## 🏗 Estrutura Técnica
+
+### 1. **Suna Backend**
+- Origem: `github.com/kortix-ai/suna`
+- Local: VPS dedicada.
+- Função: Motor de execução de agentes.
+- Manutenção: Pull periódico do repositório oficial.
+
+### 2. **Renum Backend**
+- Origem: `github.com/rcarraroia/renum-suna-core` → pasta `renum-backend`.
+- Stack: FastAPI, PostgreSQL, Supabase, WebSocket.
+- Funções:
+  - CRUD de equipes, agentes, execuções.
+  - Orquestração de workflows (sequencial, paralelo, pipeline, condicional).
+  - Autenticação (Supabase/JWT).
+  - Gestão de API Keys.
+  - Monitoramento e logs.
+  - Integração direta com Suna Backend (REST + WS).
+  - Fornecer dados e eventos para o frontend Lovable.
+
+### 3. **Renum Admin** (Futuro)
+- Painel administrativo interno.
+- Controle de usuários, logs, estatísticas, configurações.
+
+---
+
+## ⚙ Configuração `.env` Backend
+```env
+SUNABACKEND_URL=https://{dominio-suna}
+SUNABACKEND_WS=wss://{dominio-suna}/ws
+DATABASE_URL=postgresql://...
+SUPABASE_URL=https://...
+SUPABASE_KEY=...
+JWT_SECRET=...
+
+✅ Checklist Backend
+
+ Garantir todos os endpoints da API REST disponíveis ao frontend.
+
+ Implementar e manter /ws/executions/{id}/monitor.
+
+ Garantir autenticação e RLS por usuário.
+
+ Fornecer payloads consistentes para consumo no frontend.
+
+ Configurar CORS para domínio do Lovable.
+
+ Suporte a HTTPS e WSS.
+
+🔄 Fluxo Backend
+[Frontend (Lovable)] ⇄ [Renum Backend (Kiro)] ⇄ [Suna Backend]
+
+📌 Observações
+
+Kiro é responsável por toda a lógica de negócio e controle de dados.
+
+Lovable consome a API, sem lógica de backend.
+
+Manter contrato de API atualizado para evitar retrabalho.
+
+
+---
+
+## 📄 Documento 2 – **Lovable (Frontend)**
+
+```markdown
+# 🎨 Integração e Consumo de API – Lovable (Frontend RENUM)
+
+**Data:** 10/08/2025  
+**Responsável:** Renato Carraro  
+**Destinatário:** Lovable Team  
+**Objetivo:** Definir como o frontend RENUM consumirá dados e eventos do backend.
+
+---
+
+## 🎯 Função Geral do Lovable
+- Desenvolver **interface e experiência do usuário**.
+- Consumir APIs fornecidas pelo **Renum Backend**.
+- Mostrar dados e resultados em tempo real via WebSocket.
+- Garantir navegação fluida, responsiva e intuitiva.
+- Implementar painéis, formulários e visualizações.
+
+---
+
+## 🏗 Estrutura Técnica
+- Stack: Next.js 15, TypeScript, TailwindCSS, Zustand, React Query.
+- Comunicação:
+  - **REST API** para dados.
+  - **WebSocket** para eventos em tempo real.
+- Autenticação: JWT ou Supabase Auth.
+- Variáveis públicas `.env`:
+```env
+NEXT_PUBLIC_API_URL=https://{dominio-backend}/api/v1
+NEXT_PUBLIC_WS_URL=wss://{dominio-backend}/ws
+
+📡 Endpoints REST (Consumo)
+Autenticação
+
+POST /auth/login
+
+POST /auth/register
+
+GET /auth/me
+
+Equipes
+
+GET /teams
+
+POST /teams
+
+GET /teams/{id}
+
+PUT /teams/{id}
+
+DELETE /teams/{id}
+
+Execuções
+
+POST /teams/{id}/execute
+
+GET /executions
+
+GET /executions/{id}
+
+GET /executions/{id}/result
+
+GET /executions/{id}/logs
+
+POST /executions/{id}/stop
+
+Agentes
+
+GET /agents
+
+POST /agents
+
+GET /agents/{id}
+
+PUT /agents/{id}
+
+DELETE /agents/{id}
+
+Notificações
+
+GET /notifications
+
+PATCH /notifications/{id}
+
+DELETE /notifications
+
+Configurações
+
+POST /api-keys
+
+GET /api-keys
+
+DELETE /api-keys/{service}
+
+🔌 Eventos WebSocket
+
+/ws/executions/{id}/monitor
+
+Eventos:
+
+status_update
+
+agent_status_update
+
+progress_update
+
+result_update
+
+error_update
+
+🔄 Fluxo Frontend
+[UI/UX] → Chamada API (REST) → Recebe Dados JSON
+[UI/UX] → Conecta WS → Recebe Eventos em Tempo Real
+
+📌 Observações
+
+O Lovable não implementa lógica de backend — apenas exibe dados e envia comandos.
+
+O contrato da API vem do Kiro — qualquer alteração deve ser validada.
+
+WebSocket deve ter reconexão automática e autenticação por token.
+
+
+---
+
+Se quiser, Renato, eu já posso **anexar a esses dois documentos um "Contrato de API Unificado"** como anexo 3, que ambos (Kiro e Lovable) vão usar como referência para evitar divergências.  
+Quer que eu já inclua esse anexo agora?
+
+Dito por si:
+pode fazer
+Dito pelo ChatGPT:
+
+Ótimo, Renato.
+Vou adicionar agora o Anexo 3 – Contrato de API Unificado que será referência para Kiro e Lovable, garantindo que ambos sigam o mesmo padrão.
+
+📄 Anexo 3 – Contrato de API Unificado (Backend ↔ Frontend)
+# 📄 Contrato de API Unificado – RENUM
+
+**Data:** 10/08/2025  
+**Responsável:** Renato Carraro  
+**Objetivo:** Garantir que Backend (Kiro) e Frontend (Lovable) falem a mesma "linguagem" via REST API e WebSocket.
+
+---
+
+## 🗝 Autenticação
+
+### Login
+**POST** `/auth/login`
+```json
+{
+  "email": "user@example.com",
+  "password": "123456"
+}
+
+
+Resposta
+
+{
+  "access_token": "jwt-token",
+  "refresh_token": "refresh-token",
+  "user": {
+    "id": "uuid",
+    "name": "User Name",
+    "email": "user@example.com"
+  }
+}
+
+Registro
+
+POST /auth/register
+
+{
+  "name": "User Name",
+  "email": "user@example.com",
+  "password": "123456"
+}
+
+
+Resposta
+
+{
+  "id": "uuid",
+  "name": "User Name",
+  "email": "user@example.com"
+}
+
+👥 Equipes
+Criar Equipe
+
+POST /teams
+
+{
+  "name": "Equipe de Teste",
+  "description": "Descrição opcional",
+  "workflow_type": "sequential",
+  "agents": ["agent-id-1", "agent-id-2"]
+}
+
+
+Resposta
+
+{
+  "id": "uuid",
+  "name": "Equipe de Teste",
+  "workflow_type": "sequential",
+  "agents": ["agent-id-1", "agent-id-2"],
+  "created_at": "2025-08-10T12:00:00Z"
+}
+
+🚀 Execuções
+Iniciar Execução
+
+POST /teams/{id}/execute
+
+{
+  "input_data": {
+    "prompt": "Texto de entrada"
+  }
+}
+
+
+Resposta
+
+{
+  "execution_id": "uuid",
+  "status": "running",
+  "started_at": "2025-08-10T12:05:00Z"
+}
+
+Consultar Status
+
+GET /executions/{id}
+Resposta
+
+{
+  "execution_id": "uuid",
+  "status": "running",
+  "progress": 50,
+  "agents_status": [
+    {
+      "agent_id": "agent-id-1",
+      "status": "completed"
+    },
+    {
+      "agent_id": "agent-id-2",
+      "status": "running"
+    }
+  ]
+}
+
+🧠 Agentes
+Listar Agentes
+
+GET /agents
+Resposta
+
+[
+  {
+    "id": "agent-id-1",
+    "name": "Agente Pesquisa",
+    "description": "Busca informações na web",
+    "tools": ["google_search", "scraper"]
+  }
+]
+
+🔔 Notificações
+Nova Notificação (WS)
+
+Evento: notification_new
+
+{
+  "id": "notif-id",
+  "type": "execution_complete",
+  "message": "Execução finalizada com sucesso",
+  "created_at": "2025-08-10T12:10:00Z"
+}
+
+📡 WebSocket – Monitoramento de Execução
+
+Endpoint: /ws/executions/{id}/monitor
+
+Eventos
+Atualização de Status
+{
+  "event": "status_update",
+  "data": {
+    "execution_id": "uuid",
+    "status": "running",
+    "progress": 60
+  }
+}
+
+Atualização de Agente
+{
+  "event": "agent_status_update",
+  "data": {
+    "agent_id": "agent-id-1",
+    "status": "completed"
+  }
+}
+
+Resultado Final
+{
+  "event": "result_update",
+  "data": {
+    "execution_id": "uuid",
+    "result": "Texto final gerado"
+  }
+}
+
+Erro
+{
+  "event": "error_update",
+  "data": {
+    "error": "Descrição do erro"
+  }
+}
+
+📌 Observações
+
+Todos os campos e formatos devem ser mantidos iguais no backend e frontend.
+
+Alterações no contrato precisam ser aprovadas e comunicadas aos dois times.
+
+WebSocket deve manter autenticação via token.
+
+
+---
+
+Agora, Renato, temos:  
+1. **Documento Kiro (backend)**  
+2. **Documento Lovable (frontend)**  
+3. **Contrato de API Unificado (anexo)**  
+
+Isso garante que **ninguém vai desenvolver endpoints ou fluxos diferentes** e que ambos trabalham sobre a **mesma base de dados e eventos**.  
+
+Se quiser, já posso montar **um diagrama conjunto mostrando as responsabilidades de Kiro e Lovable** para fechar esse pacote de documentação de vez. Quer que eu faça?
+
+Dito por si:
+Bom dia luma, estive analisando nosso sistema renum atual e ele esta estuturado assim:
+Suna - SUNA Backend (original, atualizado do repo kortix-ai/suna) estava instalado na vps
+Renum-Backend - orquestrador e ponto de ligação do suna com nosso front - estava instalado na vps junto com suna
+Frontend-renum - estava rodando no vercel junto com renum admin.
+
+O que eu preciso entender e voce pode me explicar:
+Nessa nova estrutura nos instalamos somente suna na VPS 100% original e vamos expor a api para sistema renum. ok
+Nos temos que contruir o novo sistema renum, aproveitando os modulos e as funcionalidades mas eu queria desenvolver o sistema renum dentro das melhores praticas possiveis e eu penso que ter uma pasta chamada renum-backend não esta legal, então como poderiam aproveitar os modulos, funcionalidades do que ja temos e contruir tudo novo, mais integrado e moderno possivel?
+Dito pelo ChatGPT:
+Pensado para 14s
+
+Perfeito, Renato — vamos alinhar a nova estrutura do Renum para ficar moderna, integrada e sem “pasta solta de backend”. A ideia é aproveitar o que funciona do que já temos, mas reorganizando em módulos limpos, com contratos claros e pipeline de entrega previsível.
+
+Abaixo vai a proposta completa (já pronta pra executar).
+
+1) Topologia do sistema (nova)
+
+Suna (VPS, original)
+Só ele fica na VPS. Atualizado direto do kortix-ai/suna. Exposto via API/WS com segurança (token + IP allowlist/reverse proxy).
+
+Renum API (novo nome do backend)
+Repositório dedicado, FastAPI, orquestrador e “ponte” com Suna. Nada de pasta genérica renum-backend; agora é um serviço com identidade: renum-api.
+
+Renum Web (Frontend)
+Construído no Lovable, consome OpenAPI do Renum API + WebSocket.
+
+Renum Admin (futuro)
+Painel administrativo separado, também consumindo a mesma API.
+
+2) Estrutura de repositórios (clean, sem ambiguidade)
+
+Sugestão em polirepo (mais claro para papéis separados):
+
+renum-api (Kiro)
+
+renum-web (Lovable)
+
+renum-admin (Kiro, futuro)
+
+renum-sdks (compartilhado – gerado por CI: @renum/sdk-js, renum-sdk-py)
+
+renum-devops (Infra como código: Nginx/Caddy reverse proxy para Suna, pipelines, manifests)
+
+Se preferir monorepo, mantenha as mesmas fronteiras de pastas (apps/api, apps/web, apps/admin, packages/sdk, packages/schemas, infra/) para evitar acoplamento.
+
+3) Estrutura interna do Renum API (DDD + Clean + módulos)
+
+Em vez de “uma pasta backend”, organizamos por Domínio / Caso de Uso / Infra.
+
+renum-api/
+├── app/
+│   ├── core/                  # config, logging, segurança, middlewares
+│   ├── common/                # erros, utils, helpers
+│   ├── domain/                # regras de negócio (agnósticas de tecnologia)
+│   │   ├── agents/
+│   │   ├── teams/
+│   │   ├── executions/
+│   │   ├── notifications/
+│   │   └── identity/          # usuários/roles (se não delegar 100% ao Supabase)
+│   ├── usecases/              # orquestração de regras (application layer)
+│   │   ├── agents/
+│   │   ├── teams/
+│   │   ├── executions/
+│   │   └── notifications/
+│   ├── infra/                 # adaptação p/ mundo real
+│   │   ├── db/                # repositórios (SQLModel/SQLAlchemy)
+│   │   ├── suna/              # client REST/WS p/ Suna (isolado!)
+│   │   ├── supabase/          # auth e RLS
+│   │   ├── websocket/         # emissor/gerenciador WS para o frontend
+│   │   └── caching/           # Redis, etc (opcional)
+│   ├── api/                   # FastAPI routers (v1, v2…)
+│   │   ├── v1/
+│   │   │   ├── agents.py
+│   │   │   ├── teams.py
+│   │   │   ├── executions.py
+│   │   │   ├── notifications.py
+│   │   │   └── auth.py
+│   │   └── deps.py            # dependências compartilhadas
+│   ├── schemas/               # Pydantic models (contratos)
+│   └── main.py                # create_app(), montagem FastAPI
+├── tests/
+├── alembic/                   # migrações DB
+├── openapi/                   # spec exportada no build
+├── pyproject.toml
+└── Dockerfile
+
+
+Pontos-chave
+
+infra/suna vira um cliente isolado (REST/WS). Assim, qualquer mudança no Suna fica confinada ali.
+
+domain + usecases: deixam a regra de negócio limpa, testável e sem dependência de framework.
+
+schemas (Pydantic) = contrato oficial. No build, exportamos OpenAPI e geramos SDKs.
+
+4) Reaproveitamento do que já temos (mapa de migração)
+Módulo antigo (renum-backend)	Vai para…	Ação de migração
+CRUD Equipes/Agentes	domain/teams + usecases/teams + api/v1/teams.py	Extrair lógica para domain, roteadores usam casos de uso
+Execuções/Orquestração	domain/executions + usecases/executions + infra/suna	Isolar chamadas Suna no client; manter máquina de estados
+Notificações	domain/notifications + websocket/	Uniformizar eventos (status_update, result_update…)
+Auth/Permissões	infra/supabase + api/v1/auth.py	Delegar auth; manter RLS e checagens no app
+API Keys	domain/identity + usecases + api/v1	Padronizar storage e masking
+Logs/Monitoramento	infra/ (observability)	Estruturar logging + correlação de execuções
+
+Objetivo: levar a regra para domain; rotas só orquestram; integrações em infra.
+
+5) Contratos e SDKs (garantem integração sem divergência)
+
+OpenAPI é gerada do renum-api no CI.
+
+CI publica:
+
+@renum/sdk-js (npm) → usado no Renum Web (Lovable) e Renum Admin
+
+renum-sdk-py (PyPI) → útil para scripts ou serviços auxiliares
+
+Os tipos TypeScript vêm do OpenAPI. Isso elimina drift entre backend e frontend.
+
+6) Segurança e exposição
+
+Suna (VPS) atrás de reverse proxy:
+
+Autorização por token + (opcional) allowlist do IP do renum-api.
+
+Não expor endpoints internos do Suna diretamente ao público.
+
+Renum API exposto publicamente (HTTPS) para os clientes web.
+
+WS com autenticação por bearer token e reconexão no frontend.
+
+7) CI/CD e qualidade
+
+Renum API
+
+Lint/format: Ruff + Black
+
+Testes: Pytest (unit + integração de casos de uso)
+
+Coverage como gate
+
+Build Docker + tag versionada
+
+Exportar openapi.json em cada release
+
+Renum Web (Lovable)
+
+Tipos gerados do OpenAPI
+
+ESLint + Typecheck
+
+Preview environments por PR
+
+8) Convenções de nomes (evita confusão)
+
+Serviço backend: Renum API (repo renum-api)
+
+Frontend final: Renum Web (repo renum-web)
+
+Painel interno: Renum Admin (repo renum-admin)
+
+Nada de “renum-backend” genérico.
+
+9) Plano de migração (curto e sem dor)
+
+Fase 0 — Inventário (1 dia)
+
+Listar handlers/rotas do backend antigo e dependências diretas do Suna.
+
+Fase 1 — Esqueleto limpo (2–3 dias)
+
+Criar renum-api com a estrutura acima.
+
+Subir core, common, api/v1 vazias, infra/suna com stubs.
+
+Fase 2 — Portar domínios (4–6 dias)
+
+teams, agents, executions, notifications, auth
+
+Cada porta: extrai lógica → domain/usecases → rotas mínimas
+
+Fase 3 — Contrato e SDK (1–2 dias)
+
+Ajustar schemas
+
+Gerar OpenAPI, publicar SDK JS
+
+Fase 4 — Integração Web (Lovable) (2–4 dias)
+
+Trocar chamadas diretas por SDK
+
+Conectar WS e validar eventos
+
+Fase 5 — Endurecer (2–3 dias)
+
+CORS, rate limit, logs estruturados, observabilidade
+
+Testes integração E2E mínimos
+
+(Os prazos são estimativos de esforço relativo; você não me pediu cronograma fixo.)
+
+10) O que muda (e por que melhora)
+
+Menos acoplamento: Suna fica externo e blindado; integração concentrada em infra/suna.
+
+Código testável: regra em domain/usecases com testes puros.
+
+Evolução segura: API versionada (ex.: /api/v1), SDK atualizado automaticamente.
+
+Times sincronizados: Kiro mexe no Renum API; Lovable consome SDK e não “chuta” endpoint.
+
+Próximas entregas que eu recomendo já preparar
+
+Scaffold inicial do renum-api com pastas e routers vazios v1.
+
+Definição dos schemas (Pydantic) canônicos de: Team, Agent, Execution, Notification, ApiKey.
+
+Stub de infra/suna com interfaces (REST/WS) e tipos retornados.
+
+Job no CI para exportar OpenAPI e publicar @renum/sdk-js (versão alpha).
+
+Se você quiser, já te escrevo o esqueleto mínimo do renum-api (árvore + arquivos base) para o Kiro colar e começar, incluindo main.py, api/v1 com rotas de “health”, schemas iniciais e stub do suna_client.
+
+Dito por si:
+ok, agora precisamos pensar numa forma do kiro dev criar essa nova estrutura e deixa-la limpa. O kiro é forks do VScode então para ele trabalhar precisamos que ele tenha acesso ao repositorio do projeto. correto?
+Mas se eu nao quero criar um novo repositorio limpo para essa nova estrutura e ter que colocar os arquivos da instalação anterior da renum suna core e encher o repositorio com lixo.
+Alem do mais para termos uma integração com lovable tambem esse projeto tem que ser iniciado pelo lovable criando a base.
+Então veja o que estou pretendendo fazer:
+Criar um novo projeto no lovable para dar inicio ao desenvolvimento e conecta-lo ao github para criar o novo repositorio renum.
+Acessar o kiro e clonar esse repositorio, com repositorio local ativo copiar a pasta do sistema renum-suna-core original (ou copiamos somente a pasta do renum-backend? voce me diz qual melhor opção) e pedimos ao kiro para mapear todos os modulos e funcionalidades para criar a nova estrutura que voce propos.
+Depois que ele mapear tudo e desenvolver a spec com requisitos, desing e tarefas, nos deletamos a pasta do projeto antigo antes de fazer o commit para repositorio remoto. Assim creio eu que teremos os modulos e funcionalidades que queremos sem contamiar o novo projeto. O que vc me diz? 
+Dito pelo ChatGPT:
+Pensado para 19s
+
+Perfeito, Renato — entendi o que você quer fazer e dá pra deixar isso limpo, seguro e sem “lixo” do legado. Abaixo está o plano fechado, com duas opções de estrutura (polirepo vs monorepo iniciado no Lovable), e um passo a passo detalhado para o Kiro trabalhar sem contaminar o novo repo.
+
+0) Decisão rápida: o que copiar do legado?
+
+Copiar só a pasta renum-backend do repo antigo (rcarraroia/renum-suna-core) — recomendado.
+Motivo: é o que interessa para o novo Renum API. O Suna ficará 100% no repo original deles, e o antigo frontend/admin não devem entrar nesse novo código.
+
+Como copiar sem trazer “lixo”:
+Use sparse-checkout (mantém histórico global, mas puxa só a pasta desejada) ou git archive (snapshot limpo, sem histórico).
+→ Se você quer um repo novo absolutamente limpo, use git archive.
+→ Se você prefere ter referência mínima ao passado, use sparse-checkout num branch temporário e nunca faça merge disso no main.
+
+1) Estrutura do projeto (duas opções)
+Opção A — Polirepo (minha recomendação padrão)
+
+renum-web (Lovable inicia o repo e cuida do frontend)
+
+renum-api (Kiro cuida do backend)
+
+renum-admin (futuro, Kiro)
+
+renum-sdks (CI publica @renum/sdk-js)
+
+Prós: separação total por responsabilidade, pipelines simples, menos conflito.
+Contras: dois repositórios para gerenciar.
+
+Opção B — Monorepo iniciado pelo Lovable (atende exatamente o que você pediu)
+renum/
+├── apps/
+│   ├── web/         # criado pelo Lovable (Next.js)
+│   └── api/         # criado pelo Kiro (FastAPI)
+├── packages/
+│   ├── sdk-js/      # gerado no CI a partir do OpenAPI
+│   └── schemas/     # contratos compartilhados (opcional)
+└── infra/           # DevOps, reverse proxy configs, etc. (opcional)
+
+
+Prós: um único repo p/ todos, Lovable inicia e Kiro só clona; fácil compartilhar tipos/contratos.
+Contras: precisa combinar pipelines; atenção para não misturar responsabilidades.
+
+Pelo que você descreveu (“Lovable cria o projeto e o repo ‘renum’, Kiro clona e trabalha”), a Opção B (monorepo) encaixa perfeito. Vamos com ela.
+
+2) Fluxo proposto (monorepo iniciado no Lovable)
+Passo 1 — Lovable cria o projeto e o repositório GitHub
+
+Nome do repo: renum
+
+Estrutura inicial: apps/web (Next.js + Tailwind), README, .editorconfig, .gitignore
+
+Conectar ao GitHub (organização ou conta onde o Kiro tem acesso de “Write”).
+
+Passo 2 — Conceder acesso ao Kiro
+
+GitHub → Settings → Collaborators → Adicionar kiro com permissão Write (ou no time da org).
+
+(Opcional) Proteger main com “Require PR” e “Require checks”.
+
+Passo 3 — Kiro clona e prepara a base do apps/api
+git clone git@github.com:<org>/renum.git
+cd renum
+git checkout -b feat/api-scaffold
+mkdir -p apps/api
+
+
+Crie a estrutura limpa (conforme combinamos):
+
+apps/api/
+  app/{core,common,domain,usecases,infra/{suna,supabase,db,websocket},api/v1,schemas}
+  app/main.py
+  alembic/
+  pyproject.toml
+  Dockerfile
+
+Passo 4 — Importar SOMENTE o legado do renum-backend (branch temporário)
+Opção 4.1: Snapshot limpo (sem histórico) — git archive (mais simples)
+# Em uma pasta fora do monorepo:
+git clone https://github.com/rcarraroia/renum-suna-core.git legacy
+cd legacy
+git archive --format=tar --output=../renum-backend.tar HEAD renum-backend/
+
+# Volta pro monorepo
+cd ../renum
+tar -xf ../renum-backend.tar -C ./
+# Isso vai criar ./renum-backend/ com o conteúdo antigo
+
+# Mover para área de migração TEMPORÁRIA (não será comitada no main)
+mkdir -p migration/legacy_backend_snapshot
+git mv renum-backend migration/legacy_backend_snapshot/renum-backend
+git add .
+git commit -m "chore(migration): add legacy backend snapshot (temp)"
+
+Opção 4.2: Sparse-checkout (se quiser puxar só a pasta mantendo referência)
+git remote add legacy https://github.com/rcarraroia/renum-suna-core.git
+git fetch legacy main
+git checkout -b chore/import-legacy-backend
+git sparse-checkout init --cone
+git sparse-checkout set renum-backend
+git read-tree --prefix=migration/legacy_backend_snapshot/renum-backend -u legacy/main
+git add .
+git commit -m "chore(migration): import legacy backend (sparse) - temp"
+
+
+Importante: esse branch é temporário e serve somente para o Kiro mapear módulos e funcionalidades. Não faça merge no main com essa pasta.
+A pasta fica em migration/legacy_backend_snapshot/renum-backend.
+
+Passo 5 — Kiro mapeia módulos → cria nova estrutura em apps/api
+
+Ler tudo em migration/legacy_backend_snapshot/renum-backend.
+
+Portar somente a lógica necessária para:
+
+app/domain/*
+
+app/usecases/*
+
+app/infra/suna/* (toda integração com Suna fica isolada aqui)
+
+app/api/v1/* (rotas finas que chamam usecases)
+
+app/schemas/* (Pydantic contratos)
+
+Passo 6 — Gerar OpenAPI e amarrar SDK
+
+Implementar main.py com FastAPI e versionamento (/api/v1).
+
+Exportar openapi.json no build do CI para packages/sdk-js.
+
+(Opcional) Criar pacote packages/schemas com tipos compartilhados (se quiser tipar também o web).
+
+Passo 7 — Escrever SPEC + design + tarefas
+
+O Kiro gera SPEC (requisitos, payloads, eventos WS) dentro do repo em:
+docs/backend_spec_v1.md
+
+Criar issues no GitHub (ou tarefas no Projects) a partir da SPEC.
+
+Só depois disso, remover a pasta temporária.
+
+Passo 8 — Apagar o legado antes de subir o branch
+git rm -r migration/legacy_backend_snapshot
+git commit -m "chore: remove legacy snapshot (clean tree)"
+git push origin feat/api-scaffold
+# Abrir PR → revisão → merge squash no main
+
+
+Resultado: o main permanece limpo, sem vestígios do legado; só entra código novo.
+
+3) Como garantir que o Lovable e o Kiro não se sobrepõem
+
+Pactos de pasta:
+
+Lovable só mexe em apps/web/ e (quando necessário) em packages/sdk-js para consumir o SDK (nunca gerar).
+
+Kiro só mexe em apps/api/ e no pipeline que gera packages/sdk-js a partir do OpenAPI.
+
+Contrato único: app/schemas/* (Pydantic) → OpenAPI → SDK JS.
+O frontend nunca codifica endpoints “no chute”; só usa o SDK.
+
+Branchs separados:
+
+Frontend: feat/web-*
+
+Backend: feat/api-*
+
+Checks no PR:
+
+PR do backend só é aprovado se OpenAPI gera SDK sem erro.
+
+PR do frontend só é aprovado se usar SDK (import de @renum/sdk-js) e passar typecheck.
+
+4) Scripts e arquivos-base (nomes/valores que o Kiro precisa)
+apps/api/app/main.py (esqueleto)
+
+create_app() com:
+
+CORS liberando https://app.renum.ai (ajuste domínio do Lovable)
+
+inclusão de api/v1 routers
+
+middleware de auth (Supabase/JWT)
+
+GET /health
+
+apps/api/app/infra/suna/client.py
+
+Métodos:
+
+run_agent(...)
+
+stream_execution(execution_id)
+
+get_status(execution_id)
+
+Variáveis:
+
+SUNA_API_URL (ex.: https://suna.yourvps.com)
+
+SUNA_WS_URL (ex.: wss://suna.yourvps.com/ws)
+
+SUNA_TOKEN (Bearer interno)
+
+.github/workflows/api-ci.yml
+
+steps: setup python, install, tests, export openapi (curl http://localhost:8000/openapi.json), publicar pacote packages/sdk-js (versão preid: alpha).
+
+5) Resumo do plano (curto)
+
+Lovable cria o repo renum com apps/web.
+
+Dar acesso ao Kiro.
+
+Kiro cria apps/api (esqueleto limpo).
+
+Importa só renum-backend do legado em branch temporário dentro de migration/.
+
+Mapeia e porta o que presta para a nova arquitetura (domain/usecases/infra/api).
+
+Gera OpenAPI + SDK.
+
+Escreve SPEC e issues.
+
+Apaga migration/ e abre PR — nada de legado no main.
+
+Se você quiser, eu já te deixo um pacote inicial com:
+
+o tree mínimo de apps/api,
+
+um main.py básico,
+
+e o stub do suna/client.py
+pronto pro Kiro colar e começar. Quer que eu já entregue esse esqueleto agora?
+
+Dito por si:
+Vamos fazer o seguinte, eu vou criar o projeto no lovable e vamos seguindo passo a passo. Eu vou compartilhando com voce o que for concluido e seguimos em frente. so me respondo com ok sem explicações. Perfeito?
+Dito pelo ChatGPT:
+
+Ok.
+
+Dito por si:
+📄 Requisitos para a Homepage do Frontend RENUM.md
+Ficheiro
+Vou começar o projeto com a criação dessa home. Veja o que acha? Seja objetiva na explicação
+Dito pelo ChatGPT:
+
+O documento está bem direcionado: ele define um layout minimalista, inspirado no login do ChatGPT, com efeito de máquina de escrever, paleta alinhada ao painel RENUM e foco em UX responsiva mobile-first.
+A estrutura e os elementos interativos estão claros (texto central impactante, botões “Entrar” e “Cadastre-se”, rodapé discreto).
+Para Lovable, isso é objetivo e viável — basta seguir as cores, tipografia e espaçamentos descritos e implementar o efeito de forma otimizada para não comprometer performance.
+
+Dito por si:
+Perfeito! Agora entendo completamente o que você precisa. Você quer criar uma homepage para a plataforma RENUM inspirada no design minimalista do ChatGPT, mas com a identidade visual própria do projeto.
+
+Deixe-me primeiro examinar o estado atual do projeto para entender melhor a estrutura e depois criar um plano detalhado.
+
+Perfeito! Agora entendo completamente o que você precisa. Você quer criar uma homepage para a plataforma RENUM inspirada no design minimalista do ChatGPT, mas com a identidade visual própria do projeto.
+
+Deixe-me primeiro examinar o estado atual do projeto para entender melhor a estrutura e depois criar um plano detalhado.
+
+
+Mostrar tudo
+3 ferramentas usadas
+Perfeito! Agora tenho informações valiosas sobre a tipografia do ChatGPT. Com base na pesquisa, o ChatGPT usa uma pilha de fontes:ui-sans-serif, -apple-system, system-ui, segoe ui, roboto, ubuntu, cantarell, noto sans, sans-serif, helvetica, emoji de cor de maçã, arial, segoe ui emoji, símbolo segoe ui.
+
+Agora vou criar um plano detalhado para implementar a homepage do RENUM conforme seus requisitos:
+
+Plano de Implementação da Homepage RENUM
+1. Configuração do Sistema de Design
+Atualizar as variáveis CSS nosrc/index.csspara incluir a paleta de cores do RENUM (roxo/azul vibrante)
+Adicionar variáveis personalizadas para o tema RENUM
+Configurar uma tipografia baseada na pilha de fontes do ChatGPT
+animações personalizadas para adicionar efeito de máquina de escrever
+2. Estrutura da Homepage
+Redesenhar completamente a páginasrc/pages/Index.tsx
+Criar layout minimalista com duas peças principais (similar ao ChatGPT)
+Implementar centralização vertical e horizontal dos elementos
+Adicionar amplo uso de espaço em branco
+3. Componente de Efeito Máquina de Escrever
+Criar um gancho personalizadousar máquina de escreverpara o efeito de digitalização
+Implementar animação suave com velocidade configurável
+suporte a várias frases com loop Adicionar opcional
+Garantir desempenho otimizado
+4. Elementos Visuais Principais
+Texto principal : "Orquestre suas equipes de agentes de IA com o Renum" com efeito typewriter
+Botões de ação : "Entrar" e "Cadastre-se gratuitamente" com design inspirado no ChatGPT
+Links secundários : "Termos de Uso" e "Política de Privacidade" discretas
+Logo/Ícone : Posicionamento estratégico do ícone RENUM
+5. Sistema de Cores RENUM
+Fundo : Branco minimalista semelhante ao ChatGPT
+Texto principal : Azul/roxo vibrante da paleta RENUM
+Botões primários : Gradiente azul vibrante
+Botões secundários : Tons mais suaves
+Elementos de apoio : Núcleos neutros para manter o minimalismo
+6. Responsividade Mobile-First
+Implementar breakpoints para dispositivos móveis, tablets e desktops
+Ajustar tamanhos de fonte dinamicamente
+espaçamento e layout para telas pequenas
+Garantir interatividade touch-friendly
+7. Performance e Otimização
+Minimizar JavaScript para carregamento rápido
+animações adicionais usando transformações CSS
+Implementar carregamento lento quando necessário
+Adicionar pré-carregamento de fontes críticas
+8. Acessibilidade e SEO
+Implementar semântica HTML adequada
+Adicionar rótulos ARIA para animações
+Garantir contraste adequado em todos os elementos
+Contém meta tags e estrutura
+9. Detalhes de Implementação
+Usar Tailwind CSS para estilização consistente
+Implementar TypeScript para segurança de tipos
+Adicionar validações de entrada quando necessário
+Preparar estrutura para futuras integrações de API
+Este plano criará uma homepage moderna e impactante para o RENUM, combinando o minimalista do ChatGPT com a identidade visual única de sua plataforma. O efeito de máquina de escrever será o destaque principal, criando um primeiro impacto inovador para os usuários.
+
+A implementação seguirá as melhores práticas de UX/UI, desempenho e responsividade, garantindo uma experiência consistente em todos os dispositivos.
+Dito pelo ChatGPT:
+
+Sua descrição e o plano estão bem estruturados, Renato.
+Se seguirmos esse roteiro no Lovable, conseguimos uma homepage minimalista, responsiva e com efeito de impacto imediato, sem perder a identidade do RENUM.
+
+O que eu acrescentaria de forma objetiva:
+
+Criar desde já um componente independente para o efeito typewriter, para reutilizar em outras páginas.
+
+Definir no Tailwind config as cores e tipografia RENUM antes de começar a codar, para garantir consistência desde o primeiro commit.
+
+Preparar os botões já com variações de estado (hover, focus) para evitar retrabalho.
+
+Se você quiser, já posso te montar o bloco inicial de código e config Tailwind para essa home, pronto para colar no Lovable. Quer que eu faça?
+
+Dito por si:
+ok faça isso
+Dito pelo ChatGPT:
+Pensado para 10s
+
+Pronto.
+
+Dito por si:
+Luma, so para constar segue a url da api suna:
+A URL da API Suna que você deve usar para integrar com o seu frontend "renum" é:
+
+http://157.180.39.41:8000/api
+
+Lembre-se de que o backend da Suna está configurado para rodar na porta 8000 do seu servidor e o endpoint para a API é /api.
+Dito pelo ChatGPT:
+Pensei durante alguns segundos
+
+Recebido — URL da API Suna registrada.
+
+Use estas variáveis de ambiente no renum-api / infra/suna/client:
+
+SUNA_API_URL=http://157.180.39.41:8000/api
+
+SUNA_WS_URL=ws://157.180.39.41:8000/ws (se for usado WebSocket pelo Suna)
+
+SUNA_TOKEN=<token_interno_se_existir> (se houver autenticação)
+
+Observações rápidas (importante):
+
+O endpoint está em HTTP público — recomendo colocar um reverse-proxy (Nginx/Caddy) com TLS e autenticação (ou pelo menos IP allowlist) antes de abrir ao público.
+
+Ajustar CORS no Renum API para permitir o domínio do frontend Lovable.
+
+Valide se a rota /api está ativa e se o /ws existe/está autenticado antes da integração.
+
+Pronto — posso já preparar o stub do infra/suna/client.py usando essa URL. Quer que eu gere agora?
+
+Dito por si:
+acabei de clonar o repositorio iniciado pelo lovable no kiro, esse é o novo repositorio do projeto renum:
+https://github.com/rcarraroia/renum.git
+Como posso solicitar ao kiro que siga as instruçoes que voce mencionou sobre a pasta renum-backend, gere um solicitação para que ele  siga exatamente o que precisamos:
+Clonar somente a pasta renum-backend do repositorio https://github.com/rcarraroia/renum-suna-core.git usando a estrategia que voce menciou,
+Mapear os modulos e funcionalidades necessarias,
+Criar a nova estrutura do sistema renum
+E se possivel depois que estiver tudo finalizado deletar a pasta renum-backend.
+Não peça ao kiro para realizar commits ou push, para podermos analisar o que ele fez antes de enviar para repositorio oficial.
+Dito pelo ChatGPT:
+Pensei durante dois segundos
+
+Perfeito — abaixo está a solicitação pronta que você pode colar para o Kiro (direto no chat, ticket ou issue). É objetiva, com comandos concretos (duas opções para importar o legado) e checklist de entregáveis. Instrui explicitamente que não faça commits/push no repositório remoto — trabalho local apenas para revisão.
+
+Assunto: Tarefa — Importar e mapear renum-backend (somente local, sem commits/push)
+
+Instruções (copiar/colar para o Kiro):
+
+Olá Kiro — tarefa objetiva, siga exatamente os passos abaixo. Trabalhe localmente e não faça commits nem push para o repositório remoto até avisarmos.
+
+Preparar repositório local
+
+# clone o repo novo criado pelo Lovable (renum)
+git clone git@github.com:rcarraroia/renum.git
+cd renum
+# crie uma branch local de trabalho (sem push)
+git checkout -b chore/import-legacy-renum-backend-local
+
+
+Importar SOMENTE a pasta renum-backend do repo legado
+Escolha uma das opções abaixo (recomendado: Opção A — snapshot limpo):
+
+Opção A — Snapshot limpo (recomendado; sem histórico)
+
+# fora da pasta renum/, em uma pasta temporária:
+git clone https://github.com/rcarraroia/renum-suna-core.git legacy_repo
+cd legacy_repo
+
+# criar um tar apenas da pasta renum-backend
+git archive --format=tar --output=../renum-backend-snapshot.tar HEAD renum-backend/
+
+# voltar ao repo renum local e extrair dentro de uma pasta temporária de migração
+cd ../renum
+mkdir -p migration/legacy_backend_snapshot
+tar -xf ../renum-backend-snapshot.tar -C migration/legacy_backend_snapshot
+
+
+Opção B — Sparse-checkout (traz referência, opcional)
+
+# dentro do renum/ local
+git remote add legacy https://github.com/rcarraroia/renum-suna-core.git
+git fetch legacy main
+git checkout -b chore/import-legacy-sparse
+git sparse-checkout init --cone
+git sparse-checkout set renum-backend
+git read-tree --prefix=migration/legacy_backend_snapshot/renum-backend -u legacy/main
+# (Depois, troque de volta para a branch de trabalho se necessário)
+git checkout chore/import-legacy-renum-backend-local
+
+
+Importante: a pasta legada deve ficar somente em migration/legacy_backend_snapshot/renum-backend para análise. Não mova ou misture este conteúdo diretamente nas pastas apps/api ou app/ do novo projeto.
+
+Mapear módulos e funcionalidades (entregáveis obrigatórios — trabalho local)
+
+Criar o arquivo de mapeamento: docs/mapping_legacy_to_new_structure.md contendo:
+
+Lista de módulos arquivos encontrados em migration/legacy_backend_snapshot/renum-backend
+
+Para cada módulo/arquivo: função, dependências, endpoints expostos, e se é reutilizável, precisa de refatoração ou deve ser descartado.
+
+Prioridade de migração (Alta/Média/Baixa).
+
+Criar o arquivo docs/backend_spec_draft.md com:
+
+Especificação dos endpoints mínimos necessários para v1 (teams, agents, executions, auth, notifications)
+
+Exemplos de payloads (inputs/outputs) baseados no legado
+
+Lista de gaps e perguntas técnicas (bibliotecas, config, secrets)
+
+Criar a nova estrutura do Renum API (esqueleto) — local
+
+Criar pasta destino limpa: apps/api/ (monorepo) com a estrutura proposta:
+
+apps/api/
+├── app/
+│   ├── core/
+│   ├── common/
+│   ├── domain/
+│   ├── usecases/
+│   ├── infra/
+│   │   ├── db/
+│   │   ├── suna/
+│   │   ├── supabase/
+│   │   └── websocket/
+│   ├── api/
+│   │   └── v1/
+│   ├── schemas/
+│   └── main.py
+├── alembic/
+├── pyproject.toml
+└── Dockerfile
+
+
+Dentro de apps/api/app/infra/suna/ criar client.py stub com constantes apontando para:
+
+SUNA_API_URL = "http://157.180.39.41:8000/api"
+SUNA_WS_URL = "ws://157.180.39.41:8000/ws"
+
+
+Preencher api/v1/health.py com rota health básica para testar localmente.
+
+Portar logicamente (sem commits)
+
+Para cada item marcado como Alta no mapeamento, portar a lógica essencial do legado para os diretórios domain/ e usecases/.
+
+Isolar qualquer chamada ao Suna dentro de infra/suna/client.py.
+
+Garanta que não haja importação direta do conteúdo legado para os módulos apps/api — a portabilidade deve ser feita copiando apenas a lógica necessária e refatorando para o novo padrão.
+
+Gerar entregáveis para revisão (local, sem push)
+
+Arquivos obrigatórios a gerar localmente:
+
+docs/mapping_legacy_to_new_structure.md
+
+docs/backend_spec_draft.md
+
+Estrutura inicial de apps/api com stubs principais (main.py, api/v1/health.py, infra/suna/client.py, schemas/ com modelos básicos)
+
+Lista de dependências (requirements.txt ou pyproject.toml)
+
+Um pequeno README em migration/legacy_backend_snapshot/README.md com notas rápidas sobre o conteúdo importado
+
+Empacote tudo em .tar.gz no diretório raiz para entrega de revisão:
+
+tar -czf renum-backend-migration-work-<seu-nome>.tgz \
+  docs/mapping_legacy_to_new_structure.md \
+  docs/backend_spec_draft.md \
+  apps/api/ \
+  migration/legacy_backend_snapshot/README.md \
+  pyproject.toml
+# Isso cria um arquivo local com todo o trabalho para revisarmos
+
+
+Remoção do snapshot legado (quando indicado)
+
+Após termos revisado e aprovado os mapeamentos e a nova estrutura, você deve deletar localmente a pasta temporária do legado antes de qualquer commit/push:
+
+rm -rf migration/legacy_backend_snapshot
+# Verifique com `git status` para confirmar que nenhuma mudança será enviada
+
+
+Não faça push de migration/legacy_backend_snapshot para o remoto em hipótese alguma.
+
+Notas finais e restrições
+
+Não efetue commits nem push. Preserve todo o trabalho localmente e envie apenas o .tgz criado ou compartilhe a pasta local para revisão (via transferência segura).
+
+Garanta que todo código novo segue a estrutura limpa descrita, com infra/suna isolando chamadas ao Suna.
+
+Se encontrar dependências nativas, anote em docs/deps_issues.md com instruções para reprodução.
+
+Checklist rápido (para o Kiro confirmar localmente)
+
+ Branch local criada chore/import-legacy-renum-backend-local
+
+ migration/legacy_backend_snapshot/renum-backend criada via snapshot ou sparse
+
+ docs/mapping_legacy_to_new_structure.md preenchido
+
+ docs/backend_spec_draft.md preenchido
+
+ apps/api esqueleto criado com infra/suna/client.py stub
+
+ renum-backend-migration-work-<seu-nome>.tgz gerado
+
+ migration/legacy_backend_snapshot removido localmente antes de qualquer commit/push
+
+Fique à vontade para enviar esse texto ao Kiro. Quando ele terminar e enviar o .tgz (ou avisar que o trabalho está pronto localmente), você me compartilha o conteúdo e eu faço a revisão técnica e sugiro os próximos passos para integrar ao repo renum.
+
+Dito por si:
+I see you're working on a task that's optimized for spec sessions. Would you like to start a dedicated spec session for the best experience?
+Voce acha que seja necessario o kiro criar uma seção spec para isso? Devo lembrar que ele tem uma disposição excessiva em criar spec pra tudo 
+
+Dito pelo ChatGPT:
+
+Nesse caso, Renato, eu não recomendo pedir para o Kiro criar uma spec formal só para essa tarefa.
+
+Motivos:
+
+Aqui já temos todo o detalhamento pronto no formato de instruções passo a passo e checklist — isso já cumpre o papel de uma spec.
+
+Se deixarmos ele criar uma spec “por conta”, há alto risco dele duplicar ou reescrever requisitos que já definimos, e até modificar o escopo.
+
+O foco agora é execução controlada, não planejamento redundante.
+
+Sugiro que você envie exatamente o texto que preparei, que já funciona como uma “spec operacional” e mantém o Kiro no trilho.
+
+Se quiser, depois que ele terminar o mapeamento e a nova estrutura, aí sim podemos abrir uma spec menor e direcionada só para refinamento final.
+
+Quer que eu já prepare essa versão “enxuta” do pedido para você colar no Kiro sem que ele se empolgue criando mais spec do que o necessário?

@@ -14,6 +14,175 @@ export type Database = {
   }
   public: {
     Tables: {
+      agents_registry: {
+        Row: {
+          agent_id: string
+          capabilities: Json | null
+          created_at: string | null
+          created_by: string | null
+          dependencies: Json | null
+          description: string | null
+          id: string
+          input_schema: Json | null
+          name: string
+          policy: Json | null
+          status: string | null
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          agent_id: string
+          capabilities?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          dependencies?: Json | null
+          description?: string | null
+          id?: string
+          input_schema?: Json | null
+          name: string
+          policy?: Json | null
+          status?: string | null
+          updated_at?: string | null
+          version?: string
+        }
+        Update: {
+          agent_id?: string
+          capabilities?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          dependencies?: Json | null
+          description?: string | null
+          id?: string
+          input_schema?: Json | null
+          name?: string
+          policy?: Json | null
+          status?: string | null
+          updated_at?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
+      billing_metrics: {
+        Row: {
+          agent_id: string | null
+          cost_cents: number | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          metric_type: string
+          quantity: number | null
+          run_id: string | null
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          cost_cents?: number | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_type: string
+          quantity?: number | null
+          run_id?: string | null
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          cost_cents?: number | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_type?: string
+          quantity?: number | null
+          run_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_metrics_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      execution_logs: {
+        Row: {
+          agent_id: string | null
+          id: string
+          log_level: string | null
+          message: string
+          metadata: Json | null
+          run_id: string
+          step_number: number | null
+          timestamp: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          id?: string
+          log_level?: string | null
+          message: string
+          metadata?: Json | null
+          run_id: string
+          step_number?: number | null
+          timestamp?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          id?: string
+          log_level?: string | null
+          message?: string
+          metadata?: Json | null
+          run_id?: string
+          step_number?: number | null
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_logs_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_requests: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          priority: string | null
+          service_name: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          votes: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          priority?: string | null
+          service_name: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          votes?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          priority?: string | null
+          service_name?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          votes?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -118,6 +287,137 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           workflow_type?: string
+        }
+        Relationships: []
+      }
+      tenant_connections: {
+        Row: {
+          connection_type: string
+          created_at: string | null
+          credentials: Json
+          expires_at: string | null
+          id: string
+          last_validated: string | null
+          scopes: Json | null
+          service_name: string
+          status: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          connection_type: string
+          created_at?: string | null
+          credentials: Json
+          expires_at?: string | null
+          id?: string
+          last_validated?: string | null
+          scopes?: Json | null
+          service_name: string
+          status?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          connection_type?: string
+          created_at?: string | null
+          credentials?: Json
+          expires_at?: string | null
+          id?: string
+          last_validated?: string | null
+          scopes?: Json | null
+          service_name?: string
+          status?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      workflow_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          execution_logs: Json | null
+          id: string
+          input_data: Json | null
+          results: Json | null
+          started_at: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          workflow_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          execution_logs?: Json | null
+          id?: string
+          input_data?: Json | null
+          results?: Json | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          workflow_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          execution_logs?: Json | null
+          id?: string
+          input_data?: Json | null
+          results?: Json | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_runs_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflows: {
+        Row: {
+          agents_used: Json | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          workflow_data: Json
+        }
+        Insert: {
+          agents_used?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          workflow_data?: Json
+        }
+        Update: {
+          agents_used?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          workflow_data?: Json
         }
         Relationships: []
       }

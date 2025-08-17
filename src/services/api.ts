@@ -2,6 +2,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Team, TeamExecution, SystemHealth } from '@/types/team';
 import { teamsApi } from './teamsApi';
+import { agentsApi } from './agentsApi';
+import { workflowsApi } from './workflowsApi';
+import { connectionsApi } from './connectionsApi';
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -85,8 +88,17 @@ export const api = {
     },
   },
 
-  // Gerenciamento de equipes (usando Supabase diretamente)
+  // Gerenciamento de equipes (legado - mantido para compatibilidade)
   teams: teamsApi,
+
+  // Novo sistema de agentes
+  agents: agentsApi,
+
+  // Sistema de workflows multiagente
+  workflows: workflowsApi,
+
+  // Conexões BYOC (Bring Your Own Credentials)
+  connections: connectionsApi,
 
   // Execuções (mock por enquanto, futuramente será integrado com o backend Python)
   executions: {

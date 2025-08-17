@@ -18,8 +18,18 @@ export const agentsApi = {
 
     const agents = (data || []).map(agent => ({
       ...agent,
-      capabilities: Array.isArray(agent.capabilities) ? agent.capabilities : [],
-      dependencies: Array.isArray(agent.dependencies) ? agent.dependencies : [],
+      capabilities: Array.isArray(agent.capabilities) 
+        ? (agent.capabilities as string[]).filter((cap): cap is string => typeof cap === 'string')
+        : [],
+      dependencies: Array.isArray(agent.dependencies) 
+        ? (agent.dependencies as string[]).filter((dep): dep is string => typeof dep === 'string')
+        : [],
+      input_schema: agent.input_schema as Record<string, any> || {},
+      policy: agent.policy as Record<string, any> || {},
+      created_at: agent.created_at || new Date().toISOString(),
+      updated_at: agent.updated_at || new Date().toISOString(),
+      description: agent.description || undefined,
+      created_by: agent.created_by || undefined,
     }));
 
     return {
@@ -48,8 +58,18 @@ export const agentsApi = {
 
     return {
       ...data,
-      capabilities: Array.isArray(data.capabilities) ? data.capabilities : [],
-      dependencies: Array.isArray(data.dependencies) ? data.dependencies : [],
+      capabilities: Array.isArray(data.capabilities) 
+        ? (data.capabilities as string[]).filter((cap): cap is string => typeof cap === 'string')
+        : [],
+      dependencies: Array.isArray(data.dependencies) 
+        ? (data.dependencies as string[]).filter((dep): dep is string => typeof dep === 'string')
+        : [],
+      input_schema: data.input_schema as Record<string, any> || {},
+      policy: data.policy as Record<string, any> || {},
+      created_at: data.created_at || new Date().toISOString(),
+      updated_at: data.updated_at || new Date().toISOString(),
+      description: data.description || undefined,
+      created_by: data.created_by || undefined,
     };
   },
 
@@ -77,8 +97,18 @@ export const agentsApi = {
 
     return {
       ...data,
-      capabilities: Array.isArray(data.capabilities) ? data.capabilities : [],
-      dependencies: Array.isArray(data.dependencies) ? data.dependencies : [],
+      capabilities: Array.isArray(data.capabilities) 
+        ? (data.capabilities as string[]).filter((cap): cap is string => typeof cap === 'string')
+        : [],
+      dependencies: Array.isArray(data.dependencies) 
+        ? (data.dependencies as string[]).filter((dep): dep is string => typeof dep === 'string')
+        : [],
+      input_schema: data.input_schema as Record<string, any> || {},
+      policy: data.policy as Record<string, any> || {},
+      created_at: data.created_at || new Date().toISOString(),
+      updated_at: data.updated_at || new Date().toISOString(),
+      description: data.description || undefined,
+      created_by: data.created_by || undefined,
     };
   },
 
@@ -103,8 +133,18 @@ export const agentsApi = {
 
     const agents = (data || []).map(agent => ({
       ...agent,
-      capabilities: Array.isArray(agent.capabilities) ? agent.capabilities : [],
-      dependencies: Array.isArray(agent.dependencies) ? agent.dependencies : [],
+      capabilities: Array.isArray(agent.capabilities) 
+        ? (agent.capabilities as string[]).filter((cap): cap is string => typeof cap === 'string')
+        : [],
+      dependencies: Array.isArray(agent.dependencies) 
+        ? (agent.dependencies as string[]).filter((dep): dep is string => typeof dep === 'string')
+        : [],
+      input_schema: agent.input_schema as Record<string, any> || {},
+      policy: agent.policy as Record<string, any> || {},
+      created_at: agent.created_at || new Date().toISOString(),
+      updated_at: agent.updated_at || new Date().toISOString(),
+      description: agent.description || undefined,
+      created_by: agent.created_by || undefined,
     }));
 
     return {

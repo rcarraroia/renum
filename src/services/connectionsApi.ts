@@ -24,7 +24,16 @@ export const connectionsApi = {
 
     const connections = (data || []).map(connection => ({
       ...connection,
-      scopes: Array.isArray(connection.scopes) ? connection.scopes : [],
+      connection_type: connection.connection_type as 'oauth' | 'api_key' | 'credentials',
+      scopes: Array.isArray(connection.scopes) 
+        ? (connection.scopes as string[]).filter((scope): scope is string => typeof scope === 'string')
+        : [],
+      credentials: connection.credentials as Record<string, any>,
+      status: (connection.status as 'active' | 'inactive' | 'expired') || 'active',
+      created_at: connection.created_at || new Date().toISOString(),
+      updated_at: connection.updated_at || new Date().toISOString(),
+      expires_at: connection.expires_at || undefined,
+      last_validated: connection.last_validated || undefined,
     }));
 
     return {
@@ -59,7 +68,16 @@ export const connectionsApi = {
 
     return {
       ...data,
-      scopes: Array.isArray(data.scopes) ? data.scopes : [],
+      connection_type: data.connection_type as 'oauth' | 'api_key' | 'credentials',
+      scopes: Array.isArray(data.scopes) 
+        ? (data.scopes as string[]).filter((scope): scope is string => typeof scope === 'string')
+        : [],
+      credentials: data.credentials as Record<string, any>,
+      status: (data.status as 'active' | 'inactive' | 'expired') || 'active',
+      created_at: data.created_at || new Date().toISOString(),
+      updated_at: data.updated_at || new Date().toISOString(),
+      expires_at: data.expires_at || undefined,
+      last_validated: data.last_validated || undefined,
     };
   },
 
@@ -87,7 +105,16 @@ export const connectionsApi = {
 
     return {
       ...data,
-      scopes: Array.isArray(data.scopes) ? data.scopes : [],
+      connection_type: data.connection_type as 'oauth' | 'api_key' | 'credentials',
+      scopes: Array.isArray(data.scopes) 
+        ? (data.scopes as string[]).filter((scope): scope is string => typeof scope === 'string')
+        : [],
+      credentials: data.credentials as Record<string, any>,
+      status: (data.status as 'active' | 'inactive' | 'expired') || 'active',
+      created_at: data.created_at || new Date().toISOString(),
+      updated_at: data.updated_at || new Date().toISOString(),
+      expires_at: data.expires_at || undefined,
+      last_validated: data.last_validated || undefined,
     };
   },
 
@@ -114,7 +141,16 @@ export const connectionsApi = {
 
     return {
       ...data,
-      scopes: Array.isArray(data.scopes) ? data.scopes : [],
+      connection_type: data.connection_type as 'oauth' | 'api_key' | 'credentials',
+      scopes: Array.isArray(data.scopes) 
+        ? (data.scopes as string[]).filter((scope): scope is string => typeof scope === 'string')
+        : [],
+      credentials: data.credentials as Record<string, any>,
+      status: (data.status as 'active' | 'inactive' | 'expired') || 'active',
+      created_at: data.created_at || new Date().toISOString(),
+      updated_at: data.updated_at || new Date().toISOString(),
+      expires_at: data.expires_at || undefined,
+      last_validated: data.last_validated || undefined,
     };
   },
 

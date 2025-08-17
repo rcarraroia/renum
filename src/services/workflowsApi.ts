@@ -24,7 +24,14 @@ export const workflowsApi = {
 
     const workflows = (data || []).map(workflow => ({
       ...workflow,
-      agents_used: Array.isArray(workflow.agents_used) ? workflow.agents_used : [],
+      agents_used: Array.isArray(workflow.agents_used) 
+        ? (workflow.agents_used as string[]).filter((agent): agent is string => typeof agent === 'string')
+        : [],
+      workflow_data: workflow.workflow_data as Record<string, any> || {},
+      status: (workflow.status as 'draft' | 'active' | 'archived') || 'draft',
+      created_at: workflow.created_at || new Date().toISOString(),
+      updated_at: workflow.updated_at || new Date().toISOString(),
+      description: workflow.description || undefined,
     }));
 
     return {
@@ -59,7 +66,14 @@ export const workflowsApi = {
 
     return {
       ...data,
-      agents_used: Array.isArray(data.agents_used) ? data.agents_used : [],
+      agents_used: Array.isArray(data.agents_used) 
+        ? (data.agents_used as string[]).filter((agent): agent is string => typeof agent === 'string')
+        : [],
+      workflow_data: data.workflow_data as Record<string, any> || {},
+      status: (data.status as 'draft' | 'active' | 'archived') || 'draft',
+      created_at: data.created_at || new Date().toISOString(),
+      updated_at: data.updated_at || new Date().toISOString(),
+      description: data.description || undefined,
     };
   },
 
@@ -87,7 +101,14 @@ export const workflowsApi = {
 
     return {
       ...data,
-      agents_used: Array.isArray(data.agents_used) ? data.agents_used : [],
+      agents_used: Array.isArray(data.agents_used) 
+        ? (data.agents_used as string[]).filter((agent): agent is string => typeof agent === 'string')
+        : [],
+      workflow_data: data.workflow_data as Record<string, any> || {},
+      status: (data.status as 'draft' | 'active' | 'archived') || 'draft',
+      created_at: data.created_at || new Date().toISOString(),
+      updated_at: data.updated_at || new Date().toISOString(),
+      description: data.description || undefined,
     };
   },
 
@@ -117,8 +138,15 @@ export const workflowsApi = {
 
     return {
       ...data,
+      status: (data.status as 'pending' | 'running' | 'completed' | 'failed' | 'cancelled') || 'pending',
       results: Array.isArray(data.results) ? data.results : [],
       execution_logs: Array.isArray(data.execution_logs) ? data.execution_logs : [],
+      input_data: data.input_data as Record<string, any> || {},
+      started_at: data.started_at || new Date().toISOString(),
+      created_at: data.created_at || new Date().toISOString(),
+      updated_at: data.updated_at || new Date().toISOString(),
+      completed_at: data.completed_at || undefined,
+      error_message: data.error_message || undefined,
     };
   },
 
@@ -146,8 +174,15 @@ export const workflowsApi = {
 
     const runs = (data || []).map(run => ({
       ...run,
+      status: (run.status as 'pending' | 'running' | 'completed' | 'failed' | 'cancelled') || 'pending',
       results: Array.isArray(run.results) ? run.results : [],
       execution_logs: Array.isArray(run.execution_logs) ? run.execution_logs : [],
+      input_data: run.input_data as Record<string, any> || {},
+      started_at: run.started_at || new Date().toISOString(),
+      created_at: run.created_at || new Date().toISOString(),
+      updated_at: run.updated_at || new Date().toISOString(),
+      completed_at: run.completed_at || undefined,
+      error_message: run.error_message || undefined,
     }));
 
     return {
@@ -175,6 +210,12 @@ export const workflowsApi = {
       throw new Error(error.message);
     }
 
-    return data || [];
+    return (data || []).map(log => ({
+      ...log,
+      log_level: (log.log_level as 'debug' | 'info' | 'warn' | 'error') || 'info',
+      metadata: log.metadata as Record<string, any> || {},
+      agent_id: log.agent_id || undefined,
+      step_number: log.step_number || undefined,
+    }));
   },
 };

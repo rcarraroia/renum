@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -161,7 +162,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
             ))}
           </div>
           <p className="text-xs text-muted-foreground mt-3">
-            Clique em uma variável para copiar. Use {{{'nome_variavel'}}} nos prompts.
+            Clique em uma variável para copiar. Use {`{{nome_variavel}}`} nos prompts.
           </p>
         </CardContent>
       </Card>
@@ -233,7 +234,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
                     variant="outline"
                     onClick={() => insertVariable(variable.name, 'system_prompt')}
                   >
-                    + {{variable.name}}
+                    + {variable.name}
                   </Button>
                 ))}
               </div>
@@ -284,7 +285,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
                     variant="outline"
                     onClick={() => insertVariable(variable.name, 'user_prompt_template')}
                   >
-                    + {{variable.name}}
+                    + {variable.name}
                   </Button>
                 ))}
               </div>

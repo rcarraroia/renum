@@ -30,7 +30,10 @@ export const agentsApi = {
       updated_at: agent.updated_at || new Date().toISOString(),
       description: agent.description || undefined,
       created_by: agent.created_by || undefined,
-    }));
+      status: (agent.status === 'active' || agent.status === 'inactive' || agent.status === 'deprecated') 
+        ? agent.status as 'active' | 'inactive' | 'deprecated'
+        : 'active' as const,
+    })) as Agent[];
 
     return {
       agents,
@@ -70,7 +73,10 @@ export const agentsApi = {
       updated_at: data.updated_at || new Date().toISOString(),
       description: data.description || undefined,
       created_by: data.created_by || undefined,
-    };
+      status: (data.status === 'active' || data.status === 'inactive' || data.status === 'deprecated') 
+        ? data.status as 'active' | 'inactive' | 'deprecated'
+        : 'active' as const,
+    } as Agent;
   },
 
   // Criar novo agente (apenas usuários autenticados)
@@ -109,7 +115,10 @@ export const agentsApi = {
       updated_at: data.updated_at || new Date().toISOString(),
       description: data.description || undefined,
       created_by: data.created_by || undefined,
-    };
+      status: (data.status === 'active' || data.status === 'inactive' || data.status === 'deprecated') 
+        ? data.status as 'active' | 'inactive' | 'deprecated'
+        : 'active' as const,
+    } as Agent;
   },
 
   // Listar agentes criados pelo usuário
@@ -145,7 +154,10 @@ export const agentsApi = {
       updated_at: agent.updated_at || new Date().toISOString(),
       description: agent.description || undefined,
       created_by: agent.created_by || undefined,
-    }));
+      status: (agent.status === 'active' || agent.status === 'inactive' || agent.status === 'deprecated') 
+        ? agent.status as 'active' | 'inactive' | 'deprecated'
+        : 'active' as const,
+    })) as Agent[];
 
     return {
       agents,

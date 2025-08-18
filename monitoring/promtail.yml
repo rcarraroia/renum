@@ -1,0 +1,223 @@
+# Configuração do Promtail para coleta de logs
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Logs da aplicação Renum
+  - job_name: renum-api
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: renum-api
+          service: api
+          environment: production
+          __path__: /var/log/renum/*.log
+
+    pipeline_stages:
+      # Parse JSON logs
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            message: message
+            module: module
+            user_id: user_id
+            execution_id: execution_id
+            agent_id: agent_id
+            request_id: request_id
+            duration_ms: duration_ms
+            status_code: status_code
+
+      # Extract timestamp
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+
+      # Add labels based on log content
+      - labels:
+          level:
+          module:
+          user_id:
+          agent_id:
+
+      # Template for output
+      - template:
+          source: output
+          template: '{{ .message }}'
+
+      # Drop debug logs in production
+      - drop:
+          expression: '.*level.*debug.*'
+
+  # Logs do Nginx
+  - job_name: nginx-access
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          service: proxy
+          log_type: access
+          __path__: /var/log/nginx/access.log
+
+    pipeline_stages:
+      # Parse Nginx access logs
+      - regex:
+          expression: '^(?P<remote_addr>\S+) - (?P<remote_user>\S+) \[(?P<time_local>[^\]]+)\] "(?P<method>\S+) (?P<path>\S+) (?P<protocol>\S+)" (?P<status>\d+) (?P<body_bytes_sent>\d+) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)" "(?P<http_x_forwarded_for>[^"]*)" rt=(?P<request_time>\S+) uct="(?P<upstream_connect_time>\S+)" uht="(?P<upstream_header_time>\S+)" urt="(?P<upstream_response_time>\S+)"'
+
+      # Parse timestamp
+      - timestamp:
+          source: time_local
+          format: '02/Jan/2006:15:04:05 -0700'
+
+      # Add labels
+      - labels:
+          method:
+          status:
+          path:
+
+      # Template output
+      - template:
+          source: output
+          template: '{{ .method }} {{ .path }} {{ .status }} {{ .request_time }}s'
+
+  - job_name: nginx-error
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          service: proxy
+          log_type: error
+          __path__: /var/log/nginx/error.log
+
+    pipeline_stages:
+      # Parse Nginx error logs
+      - regex:
+          expression: '^(?P<timestamp>\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) \[(?P<level>\w+)\] (?P<pid>\d+)#(?P<tid>\d+): (?P<message>.*)'
+
+      # Parse timestamp
+      - timestamp:
+          source: timestamp
+          format: '2006/01/02 15:04:05'
+
+      # Add labels
+      - labels:
+          level:
+
+  # Logs do PostgreSQL
+  - job_name: postgres
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: postgres
+          service: database
+          __path__: /var/log/postgresql/*.log
+
+    pipeline_stages:
+      # Parse PostgreSQL logs
+      - regex:
+          expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \w+) \[(?P<pid>\d+)\] (?P<level>\w+): (?P<message>.*)'
+
+      # Parse timestamp
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.000 MST'
+
+      # Add labels
+      - labels:
+          level:
+          pid:
+
+  # Logs do Redis
+  - job_name: redis
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: redis
+          service: cache
+          __path__: /var/log/redis/*.log
+
+    pipeline_stages:
+      # Parse Redis logs
+      - regex:
+          expression: '^(?P<pid>\d+):(?P<role>\w+) (?P<timestamp>\d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2}\.\d{3}) (?P<level>.) (?P<message>.*)'
+
+      # Parse timestamp
+      - timestamp:
+          source: timestamp
+          format: '02 Jan 2006 15:04:05.000'
+
+      # Add labels
+      - labels:
+          level:
+          role:
+
+  # Logs do sistema (syslog)
+  - job_name: syslog
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: syslog
+          service: system
+          __path__: /var/log/host/syslog
+
+    pipeline_stages:
+      # Parse syslog
+      - regex:
+          expression: '^(?P<timestamp>\w{3} \d{1,2} \d{2}:\d{2}:\d{2}) (?P<hostname>\S+) (?P<process>\S+): (?P<message>.*)'
+
+      # Parse timestamp (current year assumed)
+      - timestamp:
+          source: timestamp
+          format: 'Jan 2 15:04:05'
+
+      # Add labels
+      - labels:
+          hostname:
+          process:
+
+  # Logs de webhook específicos
+  - job_name: webhooks
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: webhooks
+          service: api
+          log_type: webhook
+          __path__: /var/log/nginx/webhooks.log
+
+    pipeline_stages:
+      # Same as nginx-access but with webhook-specific labels
+      - regex:
+          expression: '^(?P<remote_addr>\S+) - (?P<remote_user>\S+) \[(?P<time_local>[^\]]+)\] "(?P<method>\S+) (?P<path>\S+) (?P<protocol>\S+)" (?P<status>\d+) (?P<body_bytes_sent>\d+) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)"'
+
+      - timestamp:
+          source: time_local
+          format: '02/Jan/2006:15:04:05 -0700'
+
+      # Extract webhook type from path
+      - regex:
+          source: path
+          expression: '/api/v1/webhooks/(?P<webhook_type>\w+)'
+
+      - labels:
+          method:
+          status:
+          webhook_type:
+
+      - template:
+          source: output
+          template: 'Webhook {{ .webhook_type }} {{ .method }} {{ .status }}'

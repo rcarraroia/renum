@@ -1,0 +1,217 @@
+# Regras de alerta para Prometheus
+groups:
+  - name: renum-api-alerts
+    rules:
+      # API Health
+      - alert: APIDown
+        expr: up{job="renum-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Renum API is down"
+          description: "The Renum API has been down for more than 1 minute."
+
+      - alert: APIHighErrorRate
+        expr: rate(http_requests_total{job="renum-api",status=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "High error rate on Renum API"
+          description: "Error rate is {{ $value }} errors per second."
+
+      - alert: APIHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="renum-api"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "High latency on Renum API"
+          description: "95th percentile latency is {{ $value }} seconds."
+
+      # Workflow Execution
+      - alert: WorkflowExecutionFailureRate
+        expr: rate(renum_workflow_executions_total{status="failed"}[10m]) / rate(renum_workflow_executions_total[10m]) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          service: orchestrator
+        annotations:
+          summary: "High workflow execution failure rate"
+          description: "Workflow failure rate is {{ $value | humanizePercentage }}."
+
+      - alert: WorkflowExecutionStuck
+        expr: renum_workflow_executions_duration_seconds{quantile="0.95"} > 300
+        for: 10m
+        labels:
+          severity: critical
+          service: orchestrator
+        annotations:
+          summary: "Workflow executions taking too long"
+          description: "95th percentile execution time is {{ $value }} seconds."
+
+      # Agent Performance
+      - alert: AgentHighFailureRate
+        expr: rate(renum_agent_executions_total{status="failed"}[10m]) / rate(renum_agent_executions_total[10m]) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+          service: agents
+        annotations:
+          summary: "High agent failure rate"
+          description: "Agent {{ $labels.agent_id }} failure rate is {{ $value | humanizePercentage }}."
+
+      - alert: AgentTimeout
+        expr: rate(renum_agent_executions_total{status="timeout"}[10m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: agents
+        annotations:
+          summary: "Agent timeouts detected"
+          description: "Agent {{ $labels.agent_id }} timeout rate is {{ $value }} per second."
+
+  - name: infrastructure-alerts
+    rules:
+      # System Resources
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}."
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}."
+
+      - alert: DiskSpaceLow
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+          service: infrastructure
+        annotations:
+          summary: "Low disk space"
+          description: "Disk usage is {{ $value }}% on {{ $labels.instance }}."
+
+      # Database
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database has been down for more than 1 minute."
+
+      - alert: PostgreSQLHighConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "High PostgreSQL connections"
+          description: "PostgreSQL connection usage is {{ $value | humanizePercentage }}."
+
+      # Redis
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: cache
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache has been down for more than 1 minute."
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: cache
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis memory usage is {{ $value | humanizePercentage }}."
+
+  - name: business-metrics-alerts
+    rules:
+      # Rate Limiting
+      - alert: HighRateLimitHits
+        expr: rate(renum_rate_limit_hits_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "High rate limit hits"
+          description: "Rate limit is being hit {{ $value }} times per second."
+
+      # Webhook Processing
+      - alert: WebhookProcessingDelay
+        expr: renum_webhook_processing_duration_seconds{quantile="0.95"} > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: webhooks
+        annotations:
+          summary: "Webhook processing delays"
+          description: "95th percentile webhook processing time is {{ $value }} seconds."
+
+      - alert: WebhookFailureRate
+        expr: rate(renum_webhook_processing_total{status="failed"}[10m]) / rate(renum_webhook_processing_total[10m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: webhooks
+        annotations:
+          summary: "High webhook failure rate"
+          description: "Webhook failure rate is {{ $value | humanizePercentage }}."
+
+      # Cost Monitoring
+      - alert: HighDailyCost
+        expr: increase(renum_execution_cost_total[1d]) > 100
+        for: 1h
+        labels:
+          severity: warning
+          service: billing
+        annotations:
+          summary: "High daily execution cost"
+          description: "Daily execution cost is ${{ $value }}."
+
+      # External Service Dependencies
+      - alert: ExternalServiceDown
+        expr: probe_success{job="external-services"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: external
+        annotations:
+          summary: "External service unavailable"
+          description: "External service {{ $labels.instance }} is not responding."
+
+      - alert: ExternalServiceHighLatency
+        expr: probe_duration_seconds{job="external-services"} > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: external
+        annotations:
+          summary: "High latency to external service"
+          description: "Latency to {{ $labels.instance }} is {{ $value }} seconds."

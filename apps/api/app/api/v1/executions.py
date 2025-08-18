@@ -1,8 +1,8 @@
 """
-Endpoints para gerenciamento de execuções.
+Multi-Agent Executions API endpoints
+Handles execution planning, coordination, and monitoring
 """
-
-from fastapi import APIRouter, HTTPException, status, Depends, Query
+from typiapi import APIRouter, HTTPException, status, Depends, Query
 from typing import Dict, Any, Optional
 from uuid import UUID
 

@@ -1,0 +1,356 @@
+# CI/CD Pipeline para Renum API
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/api/**'
+      - 'docker-compose.production.yml'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'apps/api/**'
+      - 'docker-compose.production.yml'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: renum/api
+
+jobs:
+  # Testes e Qualidade de Código
+  test:
+    name: Tests and Code Quality
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_USER: test_user
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      working-directory: ./apps/api
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+
+    - name: Set up environment variables
+      run: |
+        echo "TESTING=true" >> $GITHUB_ENV
+        echo "DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db" >> $GITHUB_ENV
+        echo "REDIS_URL=redis://localhost:6379/1" >> $GITHUB_ENV
+        echo "JWT_SECRET_KEY=test-secret-key" >> $GITHUB_ENV
+        echo "SUPABASE_URL=https://test.supabase.co" >> $GITHUB_ENV
+        echo "SUPABASE_ANON_KEY=test-anon-key" >> $GITHUB_ENV
+
+    - name: Run database migrations
+      working-directory: ./apps/api
+      run: |
+        python migrations/run_migrations.py
+
+    - name: Run linting (Ruff)
+      working-directory: ./apps/api
+      run: |
+        ruff check app/ --output-format=github
+
+    - name: Run type checking (MyPy)
+      working-directory: ./apps/api
+      run: |
+        mypy app/ --ignore-missing-imports
+
+    - name: Check code formatting (Black)
+      working-directory: ./apps/api
+      run: |
+        black --check app/
+
+    - name: Run unit tests
+      working-directory: ./apps/api
+      run: |
+        pytest -m unit --cov=app --cov-report=xml --cov-report=term-missing
+
+    - name: Run integration tests
+      working-directory: ./apps/api
+      run: |
+        pytest -m integration --cov=app --cov-append --cov-report=xml
+
+    - name: Run security tests
+      working-directory: ./apps/api
+      run: |
+        pytest -m security
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./apps/api/coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+    - name: Run security scan (Bandit)
+      working-directory: ./apps/api
+      run: |
+        bandit -r app/ -f json -o bandit-report.json || true
+
+    - name: Upload security scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: ./apps/api/bandit-report.json
+
+  # Build e Push da Imagem Docker
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push'
+    
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tag: ${{ steps.meta.outputs.tags }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: ./apps/api
+        file: ./apps/api/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+
+    - name: Generate SBOM
+      uses: anchore/sbom-action@v0
+      with:
+        image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        format: spdx-json
+        output-file: sbom.spdx.json
+
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v3
+      with:
+        name: sbom
+        path: sbom.spdx.json
+
+  # Scan de Segurança da Imagem
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push'
+
+    steps:
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ needs.build.outputs.image-tag }}
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Deploy para Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [test, build, security-scan]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Aqui você adicionaria os comandos específicos para deploy em staging
+        # Por exemplo: kubectl, docker-compose, terraform, etc.
+
+    - name: Run smoke tests
+      run: |
+        echo "Running smoke tests on staging..."
+        # Testes básicos para verificar se o deploy funcionou
+        curl -f https://staging-api.renum.com/health || exit 1
+
+    - name: Notify deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+      if: always()
+
+  # Deploy para Produção
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [test, build, security-scan]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.PRODUCTION_SSH_KEY }}
+
+    - name: Deploy to production
+      run: |
+        echo "Deploying to production environment..."
+        
+        # Exemplo de deploy via SSH
+        ssh -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_USER }}@${{ secrets.PRODUCTION_HOST }} << 'EOF'
+          cd /opt/renum
+          
+          # Backup atual
+          ./scripts/backup.sh
+          
+          # Pull nova imagem
+          docker-compose -f docker-compose.production.yml pull api
+          
+          # Deploy com zero downtime
+          docker-compose -f docker-compose.production.yml up -d --no-deps api
+          
+          # Verificar health
+          sleep 30
+          curl -f http://localhost:8000/health || exit 1
+          
+          # Limpeza de imagens antigas
+          docker image prune -f
+        EOF
+
+    - name: Run production smoke tests
+      run: |
+        echo "Running smoke tests on production..."
+        curl -f https://api.renum.com/health || exit 1
+        curl -f https://api.renum.com/api/v1/agents || exit 1
+
+    - name: Update deployment status
+      uses: chrnorm/deployment-status@v2
+      with:
+        token: ${{ github.token }}
+        state: success
+        deployment-id: ${{ github.event.deployment.id }}
+
+    - name: Notify production deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#production'
+        text: '🚀 Production deployment successful!'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  # Performance Tests
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      working-directory: ./apps/api
+      run: |
+        pip install -r requirements-test.txt
+
+    - name: Run performance tests
+      working-directory: ./apps/api
+      run: |
+        pytest -m performance --durations=0 --tb=short
+
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: ./apps/api/performance-results.json
+      if: always()
+
+  # Cleanup
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-latest
+    needs: [deploy-production, deploy-staging]
+    if: always()
+
+    steps:
+    - name: Clean up old images
+      run: |
+        # Limpeza de imagens antigas no registry
+        echo "Cleaning up old container images..."
+        
+        # Manter apenas as últimas 10 imagens
+        # Implementar lógica de limpeza baseada na política da organização

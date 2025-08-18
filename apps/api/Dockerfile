@@ -1,73 +1,64 @@
-# Multi-stage Dockerfile para Renum API
+# Multi-stage Dockerfile para produção otimizada
 FROM python:3.11-slim as builder
 
-# Configurações de ambiente
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
-
-# Instala dependências de build
+# Instalar dependências do sistema
 RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
+    build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Define diretório de trabalho
+# Configurar diretório de trabalho
 WORKDIR /app
 
-# Copia arquivos de dependências
-COPY pyproject.toml README.md ./
+# Copiar arquivos de dependências
+COPY pyproject.toml requirements.txt ./
 
-# Instala dependências em um ambiente virtual
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --upgrade pip setuptools wheel
-RUN pip install -e .
+# Instalar dependências Python
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Estágio de produção
 FROM python:3.11-slim as production
 
-# Configurações de ambiente
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/opt/venv/bin:$PATH"
+# Criar usuário não-root
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-# Instala apenas dependências de runtime
+# Instalar dependências de runtime
 RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copia ambiente virtual do estágio de build
-COPY --from=builder /opt/venv /opt/venv
-
-# Cria usuário não-root
-RUN useradd --create-home --shell /bin/bash --uid 1000 renum
-
-# Define diretório de trabalho
+# Configurar diretório de trabalho
 WORKDIR /app
 
-# Copia código da aplicação
+# Copiar dependências do estágio builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copiar código da aplicação
 COPY app/ ./app/
-COPY pyproject.toml README.md ./
+COPY migrations/ ./migrations/
+COPY start_server.py ./
+COPY .env.production.example ./.env
 
-# Muda propriedade dos arquivos
-RUN chown -R renum:renum /app
+# Criar diretórios necessários
+RUN mkdir -p /app/logs /app/data && \
+    chown -R appuser:appuser /app
 
-# Muda para usuário não-root
-USER renum
+# Configurar usuário
+USER appuser
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
-
-# Expõe porta
+# Expor porta
 EXPOSE 8000
 
-# Comando padrão com configurações otimizadas
-CMD ["uvicorn", "app.main:app", \
-     "--host", "0.0.0.0", \
-     "--port", "8000", \
-     "--workers", "1", \
-     "--access-log", \
-     "--log-level", "info"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Comando padrão
+CMD ["python", "start_server.py"]
+
+# Labels para metadados
+LABEL maintainer="Renum Team <dev@renum.com>"
+LABEL version="1.0.0"
+LABEL description="Renum Multi-Agent Integration API"

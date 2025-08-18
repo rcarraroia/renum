@@ -83,24 +83,32 @@
 
 ---
 
-### T004 - Container Base para Execução
-**Prioridade**: Média | **Estimativa**: 10h | **Assignee**: DevOps Team
+### T004 - Container Seguro com Isolamento Total
+**Prioridade**: Alta | **Estimativa**: 14h | **Assignee**: DevOps Team
 
-**Descrição**: Criar containers Docker para execução segura de código.
+**Descrição**: Criar containers Docker com segurança máxima e isolamento total para execução de código.
 
 **Tarefas**:
 - [ ] Dockerfile base com Ubuntu + ferramentas essenciais
 - [ ] Dockerfiles específicos (Node.js, Python, Generic)
-- [ ] Configurar usuário não-root e limites de recursos
-- [ ] Implementar Container Manager em Python
-- [ ] Testes de isolamento e segurança
+- [ ] Configurar usuário não-root obrigatório (UID/GID 1000:1000)
+- [ ] Configurar rede bloqueada por padrão (network_mode="none")
+- [ ] Implementar limites cgroup rigorosos (CPU, memória, I/O)
+- [ ] Configurar TTL automático (5 minutos)
+- [ ] Implementar Container Manager com whitelist de comandos
+- [ ] Configurar security_opt e tmpfs com noexec
+- [ ] Implementar cleanup automático de containers expirados
+- [ ] Testes extensivos de isolamento e segurança
 
 **DoD**:
-- Containers funcionais para Node.js e Python
-- Execução isolada sem acesso à rede
-- Limites de CPU/memória funcionando
-- Container Manager criando/destruindo containers
-- Testes de segurança passando
+- Containers executam apenas como usuário não-root
+- Rede completamente bloqueada por padrão
+- Limites cgroup funcionando (CPU, memória, I/O)
+- TTL automático de 5 minutos implementado
+- Whitelist de comandos funcionando
+- Container Manager com validação rigorosa
+- Cleanup automático de containers expirados
+- Testes de segurança e isolamento passando
 
 **Links**: 
 - `apps/devstudio-api/containers/`
